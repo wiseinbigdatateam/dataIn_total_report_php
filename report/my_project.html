@@ -1,0 +1,272 @@
+<?php
+include "./inc/header.html";
+?>
+<style>
+/*.loading {
+	width: 400px;
+    height: 185px;
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    -webkit-transform: translate(-50%,-50%);
+    border: 1px solid #e9e9e9;
+    background-color: #e9e9e9;
+    border-radius: 10px;
+    display: none;
+    font-size:24px;
+    text-align:center;
+    padding:7%;
+    z-index:9999;
+}*/
+</style>
+<script>
+var deleteAnalysisIdx = "";
+
+function moveAnalysis() {
+
+    var idx = $("input[name='project_analysis_idx']:checked").val();
+    <?php
+	// 2022-01-17 : 로그인 데이터 권한 확인 ----- kky
+	//$permit_chk = check_payment_permit($memid, "project");
+	//if($permit_chk['chk'] == false) {
+    ?>
+    //    alert("<?=$permit_chk['msg']?>");
+    <?php
+	//} else {
+    ?>
+        $(".loading-container").show();
+        console.log('s');
+        $.post("my_project_act.php", "mode=datacopy&idx="+idx, function(data) {
+            console.log(data);
+            var result = data.split("|");
+            if(result[0] == "OK") {
+                alert("데이터 가져오기 완료");
+                //location.reload();
+                document.location = "<?=$_SERVER['PHP_SELF']?>";
+            } else if(result[0] == "ERR") {
+                alert(result[1]);
+            } else {
+                alert(data);
+            }
+            $(".loading-container").hide();
+        });
+    <?php   
+    //}
+    ?>
+}
+
+function deleteAnalysis() {
+
+    var idx = moveAnalysis;
+
+	//if(confirm('프로젝트를 삭제하는 경우 모든 데이터 및 보고서가 삭제되며 \n\n삭제하신 데이터는 복구할수 없도록 영구 삭제 됩니다. \n\n그래도 삭제 하시겠습니까?')){
+		$.post("my_project_act.php", "mode=datadelete&idx=" + idx, function(data) {
+			var result = data.split("|");
+			if(result[0] == "OK") {
+				alert("삭제하였습니다.");
+				location.reload();
+                setAnalysisIdx('');
+			} else if(result[0] == "ERR") {
+				alert(result[1]);
+			} else {
+				alert(data);
+			}
+
+		});
+	//}
+
+}
+
+function setAnalysisIdx(idx) {
+    moveAnalysis = idx;
+}
+//2022-05-04 추가
+function goToDatain(){
+        alert("확인을 누르시면 데이터 등록 페이지로 이동합니다.");
+        window.open("http://datain.co.kr/analysis/analysis_input.html");
+}
+//
+$(document).ready(function() {
+
+    setList("projectListAnalysis", "ajax_project_list_analysis.html", "");
+
+});
+</script>
+        <div id="container">
+            <div id="textWrap">
+                <h2 class="title">데이터 불러오기</h2>
+                <p class="description">
+                    분석 메뉴에서 등록한 프로젝트를 가져옵니다.
+                </p>
+            </div>
+            <section id="contentsWrap" class="original-bg-style">
+                <form action="<?=$_SERVER['PHP_SELF']?>" method="get">
+                    <div class="contentsTop input-group">
+                        <button class="btn btn-secondary" type="submit" id="button-addon1">
+                            <i class="bi bi-search"> 검색</i>
+                        </button>
+                        <input type="text" name="searchkey" value="<?=$_REQUEST['searchkey']?>" class="form-control input-importProj" placeholder="검색할 프로젝트명을 입력하세요" aria-label="Example text with button addon" aria-describedby="button-addon1" />
+                        <button type="button" class="btn btn-outline-primary btn-importProj border-left" data-bs-toggle="modal" data-bs-target="#importProj">
+                            <i class="bi bi-cloud-arrow-up"></i>프로젝트 가져오기
+                        </button>
+                    </div>
+                    <div class="table-name">
+                        <i class="bi bi-table"></i> 가져온 프로젝트 리스트
+                    </div>
+                    <table class="table table-hover table-gnb3">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col" class="projName">프로젝트명</th>
+                                <th scope="col">등록날짜</th>
+                                <th scope="col">가져온날짜</th>
+                                <th scope="col">삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $page = $_REQUEST['page'];
+                            $searchkey = $_REQUEST['searchkey'];
+
+                            $param = "searchkey=".$searchkey;
+
+                            $search_sql = " WHERE memid = '$memid' ";
+                            if($subid != "") $search_sql .= " AND subid = '$subid' ";
+                            if($searchkey != "") $search_sql .= " AND analysis_title LIKE '%".$searchkey."%' ";
+
+                            $sql = "SELECT COUNT(idx) AS cnt FROM wise_analysis_main $search_sql";
+                            $result = mysqli_query($gconnet, $sql) or error('error');
+                            $row = mysqli_fetch_array($result);
+                            $total = $row['cnt'];
+
+                            $rows = 5;
+                            $lists = 10;
+
+                            $page_count = ceil($total/$rows);
+                            if(!$page || $page > $page_count) $page = 1;
+                            $start = ($page-1)*$rows;
+                            $no = $total-$start;
+
+                            $sql = "SELECT *, DATE_FORMAT(wdate, '%y.%m.%d') AS wdate, DATE_FORMAT(mv_edate, '%y.%m.%d') AS mdate FROM wise_analysis_main $search_sql ORDER BY idx DESC LIMIT $start, $rows";
+                            $result = mysqli_query($gconnet, $sql) or error('error');
+                            while($row = mysqli_fetch_array($result)) {
+                            ?>
+                            <tr>
+                                <th scope="row"><?=$no?></th>
+                                <td class="projName">
+                                    <a href="./new_report.html?project=<?=$row['idx']?>"><?=$row['analysis_title']?></a>
+                                </td>
+                                <td><?=$row['wdate']?></td>
+                                <td><?=$row['mdate']?></td>
+                                <td>
+                                    <button type="button" class="btn-delete" data-bs-toggle="modal" data-bs-target="#deleteProj" onclick="setAnalysisIdx('<?=$row['idx']?>')">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php
+                                $no--;
+                            }
+                            if($total == 0) {
+                            ?>
+                            <tr>
+                                <td class="projName" colspan="5">
+                                    등록된 항목이 없습니다.
+                                </td>
+                            </tr>
+                            <?php  
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page">
+                        <?php print_pagelist($page, $lists, $page_count, $param); ?>
+                    </nav>
+                </form>
+            </section>
+        </div>
+
+        <!-- importProj Modal -->
+        <div class="modal fade" id="importProj" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog modal-importProj">
+                <form onsubmit="setList('projectListAnalysis', 'ajax_project_list_analysis.html', $(this).serialize()); return false;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="staticBackdropLabel">
+                            프로젝트 가져오기
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="submit" id="button-addon1">
+                                <i class="bi bi-search"> 검색</i>
+                            </button>
+                            <input type="text" name="searchkey" class="form-control input-importProj" placeholder="검색할 프로젝트명을 입력하세요" aria-label="Example text with button addon" aria-describedby="button-addon1" />
+                        </div>
+                        <div class="infobox">
+                            <div class="announce">
+                                <i class="bi bi-exclamation-circle"></i>
+                                <span class="fontcolor-red">분석 메뉴에 등록된 프로젝트가 있어야 프로젝트를 가져올 수 있습니다.</span><br />
+                                가져올 프로젝트가 없다면 먼저<b>'분석 메뉴에서 프로젝트 등록하기' 버튼</b>을 클릭해 프로젝트를 등록해주세요.
+                                <button class="modal-btn-orange btn-registerProj" onclick="goToDatain()">
+                                    분석 메뉴에서 프로젝트 등록하기
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-name">
+                            <i class="bi bi-table"></i> 분석 메뉴에 등록된 프로젝트 리스트
+                        </div>
+                        <div id="projectListAnalysis">
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn modal-btn-orange" onclick="moveAnalysis()"> 가져오기 </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"> 취소 </button>
+                    </div>
+                </div>
+                </form>
+            </div>
+            <!-- loading Modal -->
+            <div class="loading-container">
+                <div class="loading"></div>
+                <div id="loading-text">loading</div>
+                <script>
+                    function loadingShow() {
+                        const loadingContainer =
+                            document.querySelector(".loading-container");
+                        loadingContainer.classList.toggle("show");
+                    }
+
+                </script>
+            </div>
+        </div>
+
+        <!-- deleteProj Modal -->
+        <div class="modal fade" id="deleteProj" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="staticBackdropLabel">
+                            프로젝트 삭제
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        프로젝트를 삭제하는 경우 모든 데이터 및 보고서가 삭제되며 삭제하신 데이터는 복구할수 없도록 영구 삭제 됩니다. <br><br>그래도 삭제 하시겠습니까?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn modal-btn-orange" onclick="deleteAnalysis()">삭제</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+
+
+<?php
+include "./inc/footer.html";
+?>

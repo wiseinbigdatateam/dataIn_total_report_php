@@ -1,0 +1,19 @@
+
+1. dbback 폴더 통채로 서버에 업로드 
+
+2. 파일질라 접속 후, 업로드된 dbback 폴더의 권한을 777 로 설정 
+설정시, 하위폴더까지 모두 적용으로 옵션 체크하고 적용합니다.
+
+3. dbback 폴더 안의 index.php 파일을 열어서, mysql 접속정보를 설정 
+
+$DB_HOST = 'localhost';	//db호스트명,일반적인 경우는 127.0.0.1 또는 localhost를 적습니다.
+$DB_USER = 'yust0701';		//db아이디
+$DB_PASS = 'yust0701!';		//db비밀번호
+$DB_NAME = 'yust0701';		//db이름
+
+4. 웹 브라우저로 dbback 폴더를 호출 
+Ex 셀바인의 경우 : http://sellbuyin.com/dbback/index.php
+
+5. 4 번의 호출과정이 끝난 후, 파일질라 접속하여 dbback 폴더를 열어보면 backup.sql 파일이 생성되어 있습니다.
+
+6. 생성된 backup.sql 을 다운로드 합니다.

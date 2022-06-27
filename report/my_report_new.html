@@ -1,0 +1,373 @@
+<?php
+include "./inc/header.html";
+
+$param_list = array();
+if(is_array($sstatus)) {
+    foreach($sstatus as $ii => $scode) {
+        if($param != "") $param .= "&";
+        $param_list[] = "sstatus[]=".$scode;
+    }
+}
+if($searchkey != "") $param_list[] = "searchkey=".$searchkey;
+if($sdate != "") $param_list[] = "sdate=".$sdate;
+if($edate != "") $param_list[] = "edate=".$edate;
+
+if(is_array($param_list)) $param = implode("&", $param_list);
+?>
+<script>
+$(document).ready(function() {
+
+    setList("reportList", "ajax_report_list.php?<?=$param?>", "");
+
+    $("#ck-all").on("change", function() {
+        $("input[name='sstatus[]']").prop("checked", $(this).prop("checked"));
+        setStatusCode();
+    });
+
+    $("input[name='sstatus[]']").on("change", function() {
+        setStatusCode();
+    });
+});
+
+function setStatusCode() {
+    var statusname = "";
+    var statuschk = 0;
+    $("input[name='sstatus[]']").each(function() {
+        if($(this).prop("checked") == true) {
+            statusname += $(this).attr("codename") + ",";
+            statuschk++;
+        }
+    });
+    $("#text_status").val(statusname.slice(0, -1));
+
+    if(statuschk == 0 || statuschk == $("input[name='sstatus[]']").length) {
+        $("#ck-all").prop("checked", true);
+        $("#text_status").val("");
+    } else {
+        $("#ck-all").prop("checked", false);
+    }
+}
+
+function openReport(url, idx) {
+    <?php
+    if($memid == "kky") {
+    ?>
+    var tmplModal = new bootstrap.Modal(document.getElementById('showReport'), {
+        keyboard: false
+    });
+    tmplModal.show()
+
+    $("input[name='template_report_idx']").val(idx);
+    
+    <?php
+    } else {
+    ?>
+    window.open(url, "");
+    <?php
+    }
+    ?>
+}
+
+function deleteReport(idx) {
+    if(confirm('삭제 후 복구가 불가능합니다. \n정말 삭제하시겠습니까?')) {
+        $.post("my_report_act.php", "mode=delete&idx=" + idx, function(data) {
+            var result = data.split("|");
+            if(result[0] == "OK") {
+                alert("삭제하였습니다.");
+                location.reload();
+            } else if(result[0] == "ERR") {
+                alert(result[1]);
+            } else {
+                alert(data);
+            }
+        })
+    }
+}
+
+function copyReport(idx) {
+    $.post("new_report_act.php", "mode=insert&copy=Y&copyidx=" + idx, function(data) {
+        var result = data.split("|");
+        if(result[0] == "OK") {
+            if(result[2] != "") {
+                location.href= result[2]+".html?mode=new&idx=" + result[1] + "&copyidx=" + idx;
+            }
+        } else if (result[0] == "ERR") {
+            alert(result[1]);
+        } else {
+            console.log(data);
+            alert(data);
+        }
+    })    
+}
+
+function submitFrom(idx) {
+
+    $.post("satisfaction_act.php" , "mode=report_insert&idx=" + idx, function(data) {
+        var result = data.split("|");
+        console.log(result);
+        if (result[0] == "OK") {
+            alert('모델 생성을 완료하였습니다. 보고서 생성 시 시간이 소요될 수 있습니다.' + idx );
+            document.location = "my_report.html";
+        } else if (result[0] == "ERR") {
+            alert(result[1]);
+        } else {
+            alert(data);
+        }
+    })
+
+}
+</script>
+        <div id="container">
+            <div id="textWrap">
+                <h2 class="title">작업리스트</h2>
+                <p class="description">
+                    분석 모델 생성에서 작성한 리스트입니다.
+                </p>
+            </div>
+            <section id="contentsWrap" class="original-bg-style">
+                <form id="searchFrm" action="<?=$_SERVER['PHP_SELF']?>" method="post">
+                    <div class="contentsTop contentsTop1 input-group">
+                        <button type="button" class="btn btn-secondary dropdown-toggle w130" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            상태
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <input class="form-check-input" type="checkbox" id="ck-all" checked />
+                                    <label class="form-check-label" for="ck-all"> 모두 </label>
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider" />
+                            </li>
+                            <?php
+                            $text_status_list = array();
+
+                            $status_list = get_report_status();
+                            if(is_array($status_list)) {
+                                foreach($status_list as $status_code => $status_name) {
+                                    $chk = "";
+                                    $status_code = "'".$status_code."'";
+                                    if(is_array($sstatus)) { 
+                                        if(in_array($status_code, $sstatus)) { 
+                                            $chk = "checked";
+                                            $text_status_list[] = $status_name;
+                                        }
+                                    }
+                            ?>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <input class="form-check-input" type="checkbox" id="ck-<?=$status_code?>" name="sstatus[]" value="<?=$status_code?>" codename="<?=$status_name?>" <?=$chk?> />
+                                    <label class="form-check-label" for="ck-<?=$status_code?>"> <?=$status_name?> </label>
+                                </a>
+                            </li>
+                            <?php
+                                }
+                            }
+                            $text_status = (is_array($text_status_list)) ? implode(",", $text_status_list) : "";
+                            ?>
+                        </ul>
+                        <input type="text" class="form-control input-condition" id="text_status" readonly aria-label="보고서 상태 검색" placeholder="모두" value="<?=$text_status?>" />
+                        <span class="input-group-text w130 border-left"> 프로젝트명 </span>
+                        <input type="text" name="searchkey" value="<?=$searchkey?>" class="form-control input-projName" placeholder="검색할 프로젝트명을 입력하세요" aria-label="Input group example" aria-describedby="basic-addon1" />
+                    </div>
+                    <div class="contentsTop contentsTop3 input-group">
+                        <span class="input-group-text w130"> 시작날짜 </span>
+                        <input type="date" name="sdate" value="<?=$sdate?>" class="form-control input-startCalendar" />
+                        <span class="date-wave">~</span>
+                        <span class="input-group-text w130 border-left"> 종료날짜 </span>
+                        <input type="date" name="edate" value="<?=$edate?>" class="form-control input-finishCalendar" />
+                        <button type="submit" class="btn btn-outline-primary btn-search" data-bs-toggle="modal" data-bs-target="#search">
+                            <i class="bi bi-search" style="margin-right: 5px"></i>검색하기
+                        </button>
+                    </div>
+                    <div class="table-name"><i class="bi bi-table"></i> 분석모델 프로젝트 리스트</div>
+                    <div id="reportList">
+                    </div>
+                    <!--
+                    <button class="btn btn-primary btn-copySetting" data-bs-toggle="modal" data-bs-target="#copySetting">
+                        <i class="bi bi-clipboard-check" style="margin-right: 5px"></i>
+                        설정 복사
+                    </button>
+                    -->
+                </form>
+            </section>
+        </div>
+    </div>
+
+
+    <!-- search Modal -->
+    <form name="templateFrm">
+    <input type="text" name="template_report_idx" value="">
+    <!-- showReport Modal 늘어뜨린버전 -->
+    <div class="modal fade" id="showReport" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-showReport" id="showReportWrap">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">
+                        보고서 디자인 적용하기
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="infobox">
+                        <div class="announce">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span class="fontcolor-red">강조할 안내문구가 있으면, 이곳에 작성해주세요. ex) 템플릿 변경은 언제든 가능합니다.</span><br />
+                            기본 안내문은 이곳에 작성해주세요. 템플릿을 선택하면 미리보기가 가능합니다. 보고서에 적용할 템플릿을 선택후 적용해주세요.
+                        </div>
+                        <div class="input-group style-category">
+                            <button type="button" class="btn btn-secondary dropdown-toggle w130" data-bs-toggle="dropdown" aria-expanded="false">분류</button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <input class="form-check-input" type="checkbox" id="ck-allStyle">
+                                        <label class="form-check-label" for="ck-allStyle"> 모두 </label>
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <input class="form-check-input" type="checkbox" id="ck-'styleA'" name="sstatus[]" value="'styleA'" codename="스타일 a">
+                                        <label class="form-check-label" for="ck-'styleA'"> 스타일 a </label>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <input class="form-check-input" type="checkbox" id="ck-'styleB'" name="sstatus[]" value="'styleB'" codename="스타일 b">
+                                        <label class="form-check-label" for="ck-'styleB'"> 스타일 b </label>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <input class="form-check-input" type="checkbox" id="ck-'styleC'" name="sstatus[]" value="'styleC'" codename="스타일 c">
+                                        <label class="form-check-label" for="ck-'styleC'"> 스타일 c </label>
+                                    </a>
+                                </li>
+                            </ul>
+                            <input type="text" class="form-control" aria-label="Text input with dropdown button" />
+                        </div>
+                        <div class="table-name">
+                            <i class="bi bi-file-earmark-bar-graph"></i> 템플릿 리스트
+                        </div>
+                        <div id="reportWrap">
+                            <div class="report-style report-styleA">
+                                <input class="form-check-input" type="radio" name="reportOption" id="reportStyleA" value="styleA" checked />
+                                <label class="form-check-label" for="reportStyleA"></label>
+                                <div class="report-thumbnail"><img src="img/report/styleA1.png" alt="보고서스타일A" onclick="clickTemp(0)"></div>
+                            </div>
+                            <div class="report-style report-styleB">
+                                <input class="form-check-input" type="radio" name="reportOption" id="reportStyleB" value="styleB" />
+                                <label class="form-check-label" for="reportStyleB"></label>
+                                <div class="report-thumbnail"><img src="img/report/styleB1.png" alt="보고서스타일B" onclick="clickTemp(1)"></div>
+                            </div>
+                            <div class="report-style report-styleC">
+                                <input class="form-check-input" type="radio" name="reportOption" id="reportStyleC" value="styleC" />
+                                <label class="form-check-label" for="reportStyleC"></label>
+                                <div class="report-thumbnail"><img src="img/report/styleC1.png" alt="보고서스타일C" onclick="clickTemp(2)"></div>
+                            </div>
+                            <div class="report-style report-styleD">
+                                <input class="form-check-input" type="radio" name="reportOption" id="reportStyleD" value="styleD" />
+                                <label class="form-check-label" for="reportStyleD"></label>
+                                <div class="report-thumbnail"><img src="img/report/styleD1.png" alt="보고서스타일D" onclick="clickTemp(3)"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn modal-btn-orange" onclick="loadingShow()">
+                                템플릿 적용하기
+                            </button>
+                        </div>
+                    </div>
+
+                    <!--보고서 템플릿 미리보기 창-->
+                    <div id="carouselExampleDark" class="carousel carousel-dark slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            <ul class="carousel-inner-ul">
+                                <li><img src="img/report/styleA1.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                                <li><img src="img/report/styleA2.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                                <li><img src="img/report/styleA3.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                                <li><img src="img/report/styleA4.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                                <li><img src="img/report/styleA5.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                                <li><img src="img/report/styleA6.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                                <li><img src="img/report/styleA7.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                                <li><img src="img/report/styleA8.png" class="w-100 d-block" alt="보고서미리보기"></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn modal-btn-orange" onclick="loadingShow()">
+                            템플릿 적용하기
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            취소
+                        </button>
+                    </div>
+                    <!-- top Button -->
+                    <div id="topButton"><i class="bi bi-arrow-up-circle-fill"></i></div>
+                </div>
+            </div>
+
+            <script>
+                let topButton = document.getElementById("topButton");
+                let showReportWrap = document.getElementById("showReportWrap");
+
+                function scrollToTop() {
+                    console.log('클릭이벤트 발생', showReportWrap.scrollHeight, showReportWrap.scrollTop);
+                    showReportWrap.scrollTo({
+                        top: 0,
+                        behavior: "smooth"
+                    });
+                }
+                topButton.addEventListener("click", scrollToTop);
+
+
+
+
+                $(document).ready(function() {
+                    $("input:radio[name=reportOption]").click(function() {
+                        //라디오버튼 클릭하면
+                        let value = $(this).val();
+                        preview(value);
+                    });
+                });
+
+                function clickTemp(value) { //썸네일(이미지) 클릭하면 호출되는 함수
+                    let blocks = document.getElementsByName('reportOption');
+                    blocks[value].checked = true; //해당썸네일 옵션 체크되게
+                    preview(blocks[value].value); //해당썸네일로 프리뷰함수 불러주기
+                }
+
+                function preview(value) { //프리뷰해주는 함수
+                    let pages = [1, 2, 3, 4, 5, 6, 7, 8]; //썸네일 별로 8페이지 보여주기
+                    let images = pages.map(e => value + e);
+
+                    let blocks = document.querySelectorAll('.d-block'); //선택한 템플릿으로 이미지주소변경하기
+                    blocks.forEach((e, i) => {
+                        e.src = "img/report/" + images[i] + ".png";
+                    });
+                }
+
+            </script>
+            <!-- loading Modal -->
+            <div class="loading-container">
+                <div class="loading"></div>
+                <div id="loading-text">loading</div>
+                <script>
+                    function loadingShow() {
+                        const loadingContainer =
+                            document.querySelector(".loading-container");
+                        loadingContainer.classList.toggle("show");
+                    }
+
+                </script>
+            </div>
+        </div>
+    </div>
+    </form>
+
+<?php
+include "./inc/footer.html";
+?>

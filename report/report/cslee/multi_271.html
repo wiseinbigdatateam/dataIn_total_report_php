@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html style="margin:0;height:100%">
+<head>
+    <meta charset="utf-8">
+    <title>다면평가 보고서 통합리포팅</title>
+    <script src="http://datain.co.kr/report/js/jquery-1.11.0.min.js"></script>
+    <script src="http://datain.co.kr/report/js/crownix-viewer.min.js"></script>
+    <script src="http://datain.co.kr/report/js/share/node_modules/socket.io-client/socket.io.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://datain.co.kr/report/css/crownix-viewer.min.css">
+</head>
+<body style="margin:0;height:100%">
+<div id="crownix-viewer" style="position:absolute;width:100%;height:100%"></div>
+<script>
+    window.onload = function(){
+
+
+        // echo "\n";
+        // echo "===============================================";
+        // echo "\n";
+        // print_r();
+        // echo "\n";
+        // echo "===============================================";
+        // echo "\n";
+
+
+        var viewer = new m2soft.crownix.Viewer('http://114.207.246.151:8283/ReportingServer/service', 'crownix-viewer');
+        viewer.hideToolbarItem(["xls","doc"]);  //저장 포맷 비활성화
+        var duplicatedReport = [
+                    {
+            mrdPath : 'hr/common/title.mrd',
+            mrdParam : '/rdata [관세청 다면평가2@다면평가 결과 보고서@@1@] /rv image1[./img/background_main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath : 'hr/common/index.mrd',
+                mrdParam : '/rdata [part1@조사 개요\n1. 조사 배경 및 필요성\n2. 조사 목적 및 기대효과\n3. 조사 절차\n4. 조사 설계\n5. 표본 특성\n6. 평가도 및 측정방법] /rv image1[./img/heading.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath : 'hr/common/survey_backgro.mrd',
+                mrdParam : '/rdata [1.조사 배경 및 필요성@Part1.조사개요@3@@@@\n조직원 능력과 자질에 대한 평가 패러다임 변화@상사-동료-부하 간의 상호작용 유형 변화@다양한 원천으로부터의 평가에 기반한 인사평가 체계의 정립@조직 구성원의 사고와 행동의 바람직한 변화 및 능력 개발을 위한 피드백 필요@조직 내 다면평가의 필요성은 다음과 같음 1. 객관성과 공정성 향상 2. 조직원간 관계 증진을 위한 강한 동기부여 3. 자기개발의 촉진제 역할 4. 피드백 시스템 정립으로 인한 조직 활성화의 촉매제] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath : 'hr/common/survey_purpose.mrd',
+                mrdParam : '/rdata [2.조사 목적 및 기대효과@Part1. 조사개요@4@객관적/체계적 측정, 평가, 관리@평가 피드백 마인드 확산 및 수용력 향상@현 수준 대비 향상 방안 모색@평가 비교를 통한 발전 방향 설정@자기계발의 올바른 방향 제시@상사의 코칭, 체계적 교육훈련@조직경쟁력(인적 역량) 향상\n객관적/공정한 평가 진단@구성원의 조직 내 가치 증명@개인의 인적 역량 향상\n결과의 지속적 관리 및 분석@상호 신뢰와 믿음을 통한 조직의 발전 도모@효율적인 평가와 책임 경영] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath : 'hr/common/survey_proced.mrd',
+                mrdParam : '/rdata [3.조사 절차@Part1. 조사개요@5@@다면 평가 모델을 기반으로, 실사진행, 자료검증, 에디팅, 데이터 입력 및 처리, 전산처리 등의 과정을 거쳐 최종 결과물이 제출됨@@\n- 기관에 적합한 평가지표 및 평가 기획@- 조직 및 주요 업무 파악@- 평가대상자 확인을 위한 이메일/문자 발송@- 수집 자료에 대한 신뢰성 확보 위해 검증 실시@- 에디팅/코딩된 자료의 전산입력 및 전산처리@- 기업 전사 통합 보고서 작성@- 분석결과를 바탕으로 통계 솔루션에 의한 보고서 작성\n@- 다면평가 구조 설계@- 시스템 사용법 안내@- 검증보고서 작성@- 기초결과표 및 평가점수 산출 위한 가중분석 실시@@- 종합 다면평가 분석보고서] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath : 'hr/common/survey_design.mrd',
+                mrdParam : '/rdata [4.조사 설계@Part1. 조사개요@6@조사 설계@@@\n관세청 다면평가2@@@@@] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath : 'hr/common/sample_charac.mrd',
+                mrdParam : '/rdata [5. 표본 특성@Part1. 조사개요@7@@@@@구분@표본수(N)@비율(%)\n전체@전체@0@100.00@100.00\n] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath: 'hr/multi/mt_weight.mrd',
+                mrdParam: '/rdata [6.평가척도 및 측정방법@Part1. 조사개요@8@평가 가중치@평가대상@상사평가@부하평가@동료평가@본인평가@Y@Y@Y@Y@Y\n의사소통@33@33@33@0\n조정통합@33@33@33@0\n조직관리@33@33@33@0\n업무추진력@33@33@33@0\n전문성@33@33@33@0] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png]'
+        }
+                ,{
+                mrdPath: 'hr/common/measure_5.mrd',
+                    mrdParam: '/rdata [6.평가척도 및 측정방법@Part1. 조사개요] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+            }
+                ,{
+            mrdPath : 'hr/common/sub_title.mrd',
+                mrdParam : '/rdata [part2@종합분석\n1. 종합평가\n] /rv image1[./img/heading.png] /rpptxdefault [1]'
+        }
+
+            ,{
+            mrdPath : 'hr/common/graph_table_1.mrd',
+                mrdParam: '/rdata [1.종합평가@Part2. 종합분석@11@1-1.종합점수@● 분석결과, 관세청 다면평가2의 다면평�으로 각각 나타남@[단위: 100점 만점]@구분@피평가자수@총점@의사소통@조정통합@조직관리@업무추진력@전문성@@@@@@@@@@@Y@Y@Y@Y@Y@Y@Y@Y@N@N@N@N@N@N@N@N@N@N\n\n//EOR//\n전체@0@@@@@@@@@@@@@@] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+        }
+
+            ,{
+            mrdPath : 'hr/common/sub_title.mrd',
+                mrdParam : '/rdata [part3@개인별 평가결과] /rv image1[./img/heading.png] /rpptxdefault [1]'
+        }
+            ,{
+            mrdPath : 'hr/common/sub_title.mrd',
+                mrdParam : '/rdata [부록@평가결과표] /rv image1[./img/heading.png] /rpptxdefault [1]'
+        }
+
+                ,{
+                mrdPath: 'hr/multi/mt_supple.mrd',
+                    mrdParam: '/rdata [평가결과표_의사소통@부록@14@총점@의사소통@@@@@@@@@@@@@@\n] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+            }
+                    ,{
+                mrdPath: 'hr/multi/mt_supple.mrd',
+                    mrdParam: '/rdata [평가결과표_조정통합@부록@15@총점@조정통합@@@@@@@@@@@@@@\n] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+            }
+                    ,{
+                mrdPath: 'hr/multi/mt_supple.mrd',
+                    mrdParam: '/rdata [평가결과표_조직관리@부록@16@총점@조직관리@@@@@@@@@@@@@@\n] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+            }
+                    ,{
+                mrdPath: 'hr/multi/mt_supple.mrd',
+                    mrdParam: '/rdata [평가결과표_업무추진력@부록@17@총점@업무추진력@@@@@@@@@@@@@@\n] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+            }
+                    ,{
+                mrdPath: 'hr/multi/mt_supple.mrd',
+                    mrdParam: '/rdata [평가결과표_전문성@부록@18@총점@전문성@@@@@@@@@@@@@@\n] /rv image1[./img/main.png] image2[./img/logo.png] image3[./img/logo1.png] /rpptxdefault [1]'
+            }
+                ];
+        viewer.openFile(duplicatedReport, { timeout:3600 });
+                viewer.setDownloadFileName('관세청 다면평가2__');
+    };
+</script>
+</body>
+</html>

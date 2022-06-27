@@ -1,0 +1,1115 @@
+<?php
+include "./inc/header.html";
+
+$select_idx = ($copyidx != "") ? $copyidx : $idx;
+
+$sql= "SELECT * FROM analysis_report WHERE idx= '$select_idx'";
+$result = mysqli_query($gconnet, $sql) or error('error');
+$report_info = mysqli_fetch_array($result);
+
+$sql = "SELECT * FROM MM_analysis_report_data WHERE report_idx = '$select_idx'";
+$result = mysqli_query($gconnet, $sql) or error('option error');
+$opt_info = mysqli_fetch_array($result);
+
+?>
+    <!--<link rel="stylesheet" href="/report_bn/css/mindmap_2.css">-->
+    <link rel="stylesheet" href="./css/mindmap.css">
+    <script src='./js/mindmap.js'></script>
+    <script src="./js/manjok.js"></script>
+    <script src="/report_bn/js/common_js.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Warning
+            $(window).on('beforeunload', function(){
+                //do something
+                return "이 페이지를 벗어나면 마지막 저장 후 수정된 내용은 저장되지 않습니다. 이동하시겠습니까?";
+            });
+            // Form Submit
+            $(document).on("submit", "form", function(event){
+                // disable warning
+                $(window).off('beforeunload');
+            });
+
+            $("#btnReportCreate").on("click", function() {
+                submitFrom("report_insert");
+            });
+
+            $("#btnReportAnalyzing").on("click", function() {
+                submitFrom("report_analyzing");
+            });
+
+            $("#btnReportTemporary").on("click", function() {
+                submitFrom("report_temporary");
+            });
+
+            $("input[name='quiz_list']").on("click", function() {
+                if ($(this).prop("checked")) {
+                    $(this).parent().removeClass("ui-selected");
+                    $(this).parent().parent().removeClass("ui-selected");
+                } else {
+                    $(this).parent().addClass("ui-selected");
+                    $(this).parent().parent().addClass("ui-selected");
+                }
+            });
+            var url_href = window.location.href;
+            var url = new URL(url_href);
+
+        })
+
+        function submitFrom(mode) {
+            var formData = new FormData($("#reportFrm")[0]);
+            formData.append("mode", mode);
+            
+            $.ajax({
+                type: 'POST',
+                url: 'satisfaction_act_20220609.php',
+                processData: false, // 필수
+                contentType: false, // 필수
+                data: formData,
+                success: function(data) {
+                    var result = data.split("|");
+                    console.log(result);
+                    if (result[0] == "OK") {
+                        if (mode == "report_insert") {
+                            alert('모델 생성을 완료하였습니다. 보고서 생성 시 시간이 소요될 수 있습니다.');
+                            document.location = "my_report.html";
+                        } else if (mode == "report_analyzing") {
+                            alert('모델 생성을 완료하였습니다. 보고서 생성 시 시간이 소요될 수 있습니다.');
+                            document.location = "my_report.html";
+                        } else if (mode == "report_temporary") {
+                            alert("임시 저장하였습니다.");
+                            return false;
+                        }
+                    } else if (result[0] == "ERR") {
+                        alert(result[1]);
+                    } else {
+                        alert(data);
+                    }
+                }
+            });
+
+        }
+
+
+        function setOptionQuiz(optId) {
+
+            if ($('input:checkbox[name="quiz_list"]:checked').length <= 0) {
+                alert("문항을 선택해주세요.");
+            } else if ($('input:checkbox[name="quiz_list"]:checked').length > 1) {
+                alert("문항을 하나만 선택해주세요.");
+                $("input[name='quiz_list']").prop("checked", false);
+            } else {
+
+                var quiz_no = $("input[name='quiz_list']:checked").val();
+                var quiz_txt = $("label[for='" + $("input[name='quiz_list']:checked").attr("id") + "']").text();
+
+                $("input[name='" + optId + "']").val(quiz_no);
+                $("#txt_" + optId).val(quiz_txt);
+
+                if (optId.includes('[')) {
+                    var txtId = optId.replace("[", "_").replace("]", "");
+                    $("#txt_" + txtId).val(quiz_txt);
+                }
+
+                if (optId.includes('case_quiz_no')) { // case example
+                    if ($("input[name='quiz_list']:checked").attr("exlist") == "") {
+                        alert("보기형 문항만 선택할 수 있습니다.");
+                        return false;
+                    } else {
+                        var optIdList = txtId.split("_");
+                        var optIdNo = optIdList[optIdList.length - 1];
+                        var exlist = $("input[name='quiz_list']:checked").attr("exlist").split("^");
+                        var caseExList = $("#case_ex_list_" + optIdNo);
+                        caseExList.find("li").remove();
+                        for (ii = 0; ii < exlist.length; ii++) {
+                            var detailList = exlist[ii].split("|");
+                            caseExList.append("<li><input type='checkbox' name='case_item_details[" + optIdNo + "][]' value='" + detailList[0] + "'> " + detailList[1] + "</li>");
+                        }
+                    }
+                }
+
+                $("input[name='quiz_list']").prop("checked", false);
+            }
+        }
+
+        function resetOptionQuiz(optId) {
+            $("input[name='" + optId + "']").val("");
+            $("#txt_" + optId).val("");
+
+            var txtId = optId.replace("[", "_").replace("]", "");
+            var optIdList = txtId.split("_");
+            var optIdNo = optIdList[optIdList.length - 1];
+            var caseExList = $("#case_ex_list_" + optIdNo);
+            caseExList.find("li").remove();
+
+            if (optId.includes('[')) {
+                var txtId = optId.replace("[", "_").replace("]", "");
+                $("#txt_" + txtId).val("");
+            }
+
+        }
+
+        function setSampleQuiz() {
+            if($('input:checkbox[name="quiz_list"]:checked').length <= 0){
+                alert("문항을 선택해주세요.");
+            } else {
+                $("input:checkbox[name='quiz_list']:checked").each(function() {
+                    var quiz_no = $(this).val();
+                    var quiz_txt = $("label[for='"+$(this).attr("id")+"']").text();
+                    var sample_id = 'satis_sample_quiz';
+                    var sub_id = sample_id + quiz_no;
+
+                    var quiz_chk = false;
+                    $(".sample-item-wrap").find("input[name='"+sample_id+"']").each(function() { // 같은 문항 선택 시 추가하지 않음
+                        if(quiz_no == $(this).val()) {
+                            quiz_chk = true;
+                            return false;
+                        }
+                    });
+
+                    if(quiz_chk == false) {
+
+                        $(".sample-item-wrap").append('<div class="sample-item-group" id="'+sub_id+'"></div>');
+                        $(".sample-item-wrap").find(".sample-item-group:last").append('<input type="hidden" name="'+sample_id+'['+quiz_no+']'+'" value="'+quiz_no+'">');
+                        $(".sample-item-wrap").find(".sample-item-group:last").append('<p class="sample-item-delete" type="button" onclick="deleteModelQuiz(\''+sub_id+'\')">x</p>');
+                        $(".sample-item-wrap").find(".sample-item-group:last").append('<p class="sample-item">'+quiz_txt+'</p>');
+
+
+                    }
+                });
+                $("input[name='quiz_list']").prop("checked", false);
+            }
+        }
+        function resetSampleQuiz() {
+            $(".sample-item-wrap").children().remove();
+        }
+
+        function setModelQuiz(modelId) {
+
+            if($('input:checkbox[name="quiz_list"]:checked').length <= 0){
+                alert("문항을 선택해주세요.");
+            } else {
+
+                $("input:checkbox[name='quiz_list']:checked").each(function() {
+
+                    var quiz_no = $(this).val();
+                    var quiz_txt = $("label[for='"+$(this).attr("id")+"']").text();
+
+                    var id_list = modelId.split("_");
+                    var sub_id = 'satis_model_quiz'+id_list[2]+'_'+quiz_no;
+
+                    var quiz_chk = false;
+                    $("#"+modelId).find("input[name='satis_model_quizno["+id_list[2]+"]["+quiz_no+"]']").each(function() { // 같은 문항 선택 시 추가하지 않음
+                        if(quiz_no == $(this).val()) {
+                            quiz_chk = true;
+                            return false;
+                        }
+                    });
+
+                    if(quiz_chk == false) {
+
+                        $("#"+modelId).append('<li class="card-contents1" id="'+sub_id+'"></li>');
+                        $("#"+modelId).find(".card-contents1:last").append('<input type="hidden" name="satis_model_quizno['+id_list[2]+']['+quiz_no+']" value="'+quiz_no+'">');
+                        $("#"+modelId).find(".card-contents1:last").append('<button class="delete" type="button" onclick="deleteModelQuiz(\''+sub_id+'\')">x</button>');
+                        $("#"+modelId).find(".card-contents1:last").append(quiz_txt);
+
+
+                    }
+                });
+                $("input[name='quiz_list']").prop("checked", false);
+            }
+
+        }
+        function deleteModelQuiz(id) {
+            $("#"+id).remove();
+        }
+        function setModelBox(boxId) {
+
+            $("#"+boxId).find(".add-card-wrap").remove();
+
+
+            var card_id = $("#"+boxId).find(".card:last").attr('id');
+            var id_list = card_id.split("_");
+            var sub_id_int = parseInt(id_list[2]) + 1;
+            var sub_id = "model_box_"+ sub_id_int;
+
+            var quiz_no = $("input:checkbox[name='quiz_list']:checked").val();
+            //var quiz_txt = $("label[for='"+$("input:checkbox[name='quiz_list']:checked").attr("id")+"']").text();
+
+            var model_quiz_id = sub_id + "_" + 1;
+
+            $("#"+boxId).append('<div class="card" id="'+sub_id+'"></div>');
+            $("#"+boxId).find(".card:last").append('<div class="card-body"></div>');
+            $("#"+boxId).find(".card:last").find(".card-body").append('<p class="card-delete" onclick="deleteModelBox(\''+sub_id+'\')"></p>');
+            $("#"+boxId).find(".card:last").find(".card-body").find(".card-delete").append('<i class="bi bi-x-lg"></i>');
+            $("#"+boxId).find(".card:last").find(".card-body").append('<div class="card-content-wrap card-content-satismodel"></div>');
+            if(boxId == "model_box_right") {
+                $("#" + boxId).find(".card:last").find(".card-body").find(".card-content-wrap").append('<ul class="column-title"></ul>');
+                $("#" + boxId).find(".card:last").find(".card-body").find(".card-content-wrap").find(".column-title").append('<li class="card-contents"></li>');
+                $("#" + boxId).find(".card:last").find(".card-body").find(".card-content-wrap").find(".column-title").find(".card-contents").append('<input type="text" class="modelTitle" name="model_title[<?=$model_type?>]" placeholder="제목">')
+            }
+            $("#"+boxId).find(".card:last").find(".card-body").find(".card-content-wrap").append('<ul class="column-contents" id="'+model_quiz_id+'"></ul>');
+            $("#"+boxId).find(".card:last").find(".card-body").find(".card-content-wrap").find(".column-contents").append('<div class="card-contents-plus"></div>');
+            $("#"+boxId).find(".card:last").find(".card-body").find(".card-content-wrap").find(".column-contents").find(".card-contents-plus").append('<button class="btn-secondary btn-plus-small" onclick="setModelQuiz(\''+model_quiz_id+'\')">+</button>')
+            if(boxId == "model_box_left") {
+                $("#" + boxId).find(".card:last").find(".card-body").find(".card-content-wrap").append('<ul class="column-title"></ul>');
+                $("#" + boxId).find(".card:last").find(".card-body").find(".card-content-wrap").find(".column-title").append('<li class="card-contents"></li>');
+                $("#" + boxId).find(".card:last").find(".card-body").find(".card-content-wrap").find(".column-title").find(".card-contents").append('<input type="text" class="modelTitle" name="model_title[<?=$model_type?>]" placeholder="제목">')
+            }
+            $("#"+boxId).find(".card:last").find(".card-body").append('<div class="card-action-wrap"></div>');
+            $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").append('<div class="card-action-satismodel"></div>');
+            if(boxId == "model_box_left") {
+                $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<label>요소만족도</label>');
+                $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<button class="btn-outline-secondary btn-plus-small" onclick="setOptionQuiz(\'element_'+sub_id+'\')">+</button><button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz(\'element_'+sub_id+'\')">-</button>');
+                $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<input type="hidden" name="element_model_box_['+sub_id_int+']['+quiz_no+']" value="'+quiz_no+'">');
+                $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<input type="text" id="txt_element_'+sub_id+'" readonly>');
+
+            }
+            $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<input type="number" class="input-weight" name="model_weight[<?=$model_type?>]" placeholder="가중치%" value="">');
+
+            $("#"+boxId).append('<div class="add-card-wrap"></div>');
+            $("#"+boxId).find(".add-card-wrap:last").append('<p class="add-card-btn" onclick="setModelBox(\''+boxId+'\')"><i class="bi bi-arrow-down-circle-fill"></i> 상자를 추가합니다. </p>');
+
+        }
+
+        function deleteModelBox(boxId) {
+            $("#"+boxId).remove();
+        }
+
+        function plusCompare() {
+            $(".tr_th").find("<table>").find("<tbody>").append('<tr><td scope="col" class="table-title">title</td></tr>');
+        }
+
+    </script>
+
+    <div id="container">
+        <div id="textWrap" class="div_left">
+            <h2 class="title title2">만족도모델 생성</h2>
+            <p class="description">
+                <!--Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga laborum, atque eos cupiditate molestiae sint placeat laudantium reprehenderit.-->
+            </p>
+        </div>
+        <main>
+            <form id="reportFrm" action="" enctype="multipart/form-data" onsubmit="return false">
+                <input type="hidden" name="report_idx" value="<?=$idx?>">
+                <input type="hidden" name="analysis_idx" value="<?=$report_info['dataInIdx']?>">
+                <input type="hidden" name="satisfaction_option_status" id="satisfaction_option_status" value="" />
+                <!--<input type="hidden" name="decision_option_status" id="decision_option_status" value="" />-->
+                <div class="div_right" id="list">
+                    <?php
+                    include "./inc/right.php";
+                    ?>
+                </div>
+                <div class="div_left">
+                    <div class="original-bg-style margin50" id="satismodel-step1">
+                        <div onclick="fnScrollTop('section1')" class="sec_title contentsTop">
+                            <h2 class="stepTit">
+                                <span class="stepBadge active">STEP 1</span>
+                                <br />조사정보입력
+                                <div class="announce announce-light">
+                                    <p>STEP1 기입 내용은 보고서의 '조사정보'란에 출력됩니다.</p>
+                                </div>
+                            </h2>
+                        </div>
+                        <section id="section1">
+                            <div class="infobox">
+                                <div class="announce"><i class="bi bi-exclamation-circle"></i> 보고서 생성을 위한 <span class="fontcolor-red">필수 항목</span>들은 반드시 입력해주세요.</div>
+                            </div>
+                            <table class="table-step table-step1">
+                                <tr>
+                                    <td>
+                                        <div class="input-group essential-item">
+                                            <label for="analysis_title" class="input-group-text w130">* 보고서명</label>
+                                            <input type="text" class="form-control" name="analysis_title" id="analysis_title" placeholder="예) 와이즈인컴퍼니사의 만족모델 보고서" value="<?=$report_info['analysis_title']?>" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130"> 조사대상</span>
+                                            <input type="text" name="sample_size" value="<?=$report_info['sample_size']?>" class="form-control" placeholder="예) 전문가" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130"> 모집단</span>
+                                            <input type="text" name="population" value="<?=$report_info['population']?>" class="form-control" placeholder="예) OO관련 전문가" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130"> 표본추출방법</span>
+                                            <input type="text" name="sampling_method" value="<?=$report_info['sampling_method']?>" class="form-control" placeholder="예) 모집단 고객유형에 따른 임의할당 표본추출(Quota Sampling)" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130"> 조사방법 </span>
+                                            <input type="text" name="survey_method" value="<?=$report_info['survey_method']?>" class="form-control" placeholder="예) 일대일 개별면적조사(Face to Face interview)" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130"> 조사기간 </span>
+                                            <input type="text" name="analysis_period" value="<?=$report_info['analysis_period']?>" class="form-control" placeholder="예) 20XX년 XX월 XX일 ~ 20XX년 XX월 XX일" />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="tr-margin"></tr>
+                                <?php
+                                $sql = "SELECT * FROM MM_analysis_report_sample_character where mm_report_sample_character_idx = '$select_idx' ORDER BY quiz_no ASC";
+                                $result = mysqli_query($gconnet, $sql);
+                                while($row = mysqli_fetch_array($result)) {
+                                    $sample_list[$row['quiz_no']] = $row['quiz_no'];
+                                }
+                                ?>
+                                <tr id="groupClassification">
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130 m10 border-right"> 표본특성문항 </span>
+                                            <div class="sample-item-wrap">
+                                                <?php
+                                                if(is_array($sample_list)) {
+                                                    foreach($sample_list as $quiz_no => $quiz_row) {
+                                                    $sub_id = "satis_sample_quiz".$quiz_no;
+                                                ?>
+                                                <div class="sample-item-group" id="<?=$sub_id?>">
+                                                    <input type="hidden" name="satis_sample_quiz[<?=$quiz_no?>]" value="<?=$quiz_no?>">
+                                                    <p class="sample-item-delete" type="button" onclick="deleteModelQuiz('satis_sample_quiz<?=$quiz_no?>')">x</p>
+                                                    <p class="sample-item"><?=$quiz_list[$quiz_no]?></p>
+                                                </div>
+
+                                                <?php
+                                                    }
+                                                }
+                                                ?>
+                                            </div>
+                                            <button type="button" class="btn-secondary btn-plus" onclick="setSampleQuiz()">+</button>
+                                            <button type="button" class="btn-outline-secondary btn-reset" onclick="resetSampleQuiz()"><i class="bi bi-arrow-clockwise"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php
+
+
+                                    ?>
+                                <tr>
+                                    <td>
+                                        <div class="announce announce-light">
+                                            <ul>
+                                                <li>표본특성문항은 인구통계학적 특성을 포함한 조사대상자의 특성을 분석하는 기준변수입니다. (예: 성별, 연령, 경력 등) <span class="fontcolor-red">문항리스트에서 선택해주세요.</span></li>
+                                                <li>선택된 내용은 보고서상의 '표본특성' 페이지에 분석결과가 나타납니다.</li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="tr-margin"></tr>
+                                <?php
+                                $case_list = array(1 => array(), 2 => array());
+                                $sql = "SELECT * FROM MM_analysis_report_case where mm_report_case_idx = '$select_idx'";
+                                $result = mysqli_query($gconnet, $sql);
+                                unset($tmp_grp_idx); $case_no = 0;
+                                while($row = mysqli_fetch_array($result)) {
+
+                                    if($tmp_grp_idx != $row['quiz_no']) {
+                                        $case_no++;
+                                    }
+
+                                    $case_list[$case_no]['grp'] = $row['quiz_no'];
+                                    $case_list[$case_no]['item'][$row['data_val']] = true;
+
+                                    $tmp_grp_idx = $row['quiz_no'];
+                                }
+                                if(is_array($case_list)) {
+                                    foreach($case_list as $case_no => $case_row) {
+                                ?>
+                                <tr id="groupClassification">
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130 m10 border-right"> 케이스 <?=$case_no?></span>
+                                            <input type="hidden" name="case_quiz_no[<?=$case_no?>]" value="<?=$case_row['grp']?>">
+                                            <input type="text" class="text-disabled input-border w300" id="txt_case_quiz_no_<?=$case_no?>" value="<?=$quiz_list[$case_row['grp']]?>" placeholder="문항리스트에서 추가하세요" disabled/>
+                                            <button class="btn-secondary btn-plus" id="btn_case_quiz_no_<?=$case_no?>" onclick="setOptionQuiz('case_quiz_no[<?=$case_no?>]')">+</button>
+                                            <button class="btn-outline-secondary btn-minus" onclick="resetOptionQuiz('case_quiz_no[<?=$case_no?>]')">-</button>
+
+                                            <ul id="case_ex_list_<?=$case_no?>" class="case-style">
+                                                <?php
+                                                if(is_array($quiz_value_list[$case_row['grp']])) {
+                                                    foreach($quiz_value_list[$case_row['grp']] as $val_ii => $val_txt) {
+                                                list($val_value, $val_title) = explode("|", $val_txt);
+
+                                                $chk = ($case_list[$case_no]['item'][$val_value]) ? "checked" : "";
+                                                ?>
+                                                <li><input type='checkbox' name='case_item_details[<?=$case_no?>][]' value='<?=$val_value?>' <?=$chk?>> <?=$val_title?></li>
+                                                <?php
+                                                    }
+                                                }
+                                                ?>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php
+                                        }
+                                    }
+                                ?>
+                                <tr>
+                                    <td>
+                                        <div class="announce announce-light">
+                                            <p>
+                                            <ul>
+                                                <li>케이스는 분석데이터의 기준변수입니다. <span class="fontcolor-red">문항리스트에서 선택해주세요.</span></li>
+                                                <li>문항 선택 후 보기를 선택하시기 바랍니다. (예: 20대, 30대 선택 시 20대, 30대 데이터만 분석됩니다.)</li>
+                                            </ul>
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="tr-margin"></tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text w130 m10 border-right">로고등록</span>
+                                            <input type="file" class="form-control w600 border-left" name="log_path" value="<?=$report_info['log_path']?>"/>
+                                        </div>
+                                        </div>
+                                        <div class="announce announce-light">
+                                            <p>자사의 로고를 업로드해보세요. 나만의 보고서가 완성됩니다.
+                                                <span class="fontcolor-blue">로고등록된 보고서 보기</span>
+                                            <ul>
+                                                <li>로고 이미지 (가로 640픽셀 이상, 16:9 비율 권장, 용량 2KB 이하)</li>
+                                                <li>업로드 이미지 형식: JPG, GIF, PNG</li>
+                                            </ul>
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </section>
+                    </div>
+                    <div class="original-bg-style margin50" id="satismodel-step2">
+                        <div onclick="fnScrollTop('section2')" class="sec_title sec_title2 contentsTop">
+                            <h2 class="stepTit">
+                                <span class="stepBadge">STEP 2</span>
+                                <br />분석모델설정
+                            </h2>
+                        </div>
+                        <section id="section2">
+                            <div class="infobox">
+                                <div class="announce"><i class="bi bi-exclamation-circle"></i> 아래 영역은 분석모델트리의 구조를 보여주는 영역입니다. 오른쪽의 문항리스트에서 분석모델을 설정해보세요.</div>
+                            </div>
+                            <div class="mf_wrap satismodel">
+                                <?php
+                                $sql = "SELECT * FROM MM_analysis_report_model where mm_report_model_idx = '$select_idx' and model_variable_element != 1 ORDER BY quiz_no ASC";
+                                $result = mysqli_query($gconnet, $sql);
+                                while($row = mysqli_fetch_array($result)) {
+                                    $model_list[$row['model_type']][$row['quiz_no']] = $row['quiz_no'];
+                                }
+                                ?>
+                                <?php
+                                    $model_type = 1; // 왼쪽모델
+                                    $boxId = "model_box_".$model_type;
+                                    $model_quiz_id = $boxId."_0";
+                                ?>
+                                <div class="satismodel-left-card" id="model_box_left">
+                                    <?php
+                                    $sql = "SELECT distinct model_type, model_title, model_weight, model_variable_element FROM MM_analysis_report_model WHERE report_idx = '$select_idx' and model_type>0 and model_type<100";
+                                    $result = mysqli_query($gconnet, $sql) or error('option error');
+                                    if( empty($row = mysqli_fetch_array($result)) ) {
+                                    ?>
+                                    <div class="card" id="<?=$boxId?>">
+                                        <div class="card-body">
+                                            <!--<p class="card-delete" onclick="deleteModelBox('<?=$boxId?>')"><i class="bi bi-x-lg"></i></p>-->
+                                            <div class="card-content-wrap card-content-satismodel">
+                                                <ul class="column-contents" id="<?=$model_quiz_id?>">
+                                                    <div class="card-contents-plus">
+                                                        <button id="btn_plus_<?=$model_quiz_id?>" class="btn-secondary btn-plus-small" onclick="setModelQuiz('<?=$model_quiz_id?>')">+</button>
+                                                    </div>
+                                                    <?php
+                                                    if(is_array($model_list[$model_type])) {
+                                                        foreach($model_list[$model_type] as $model_quiz_no => $sub_quiz_no) {
+                                                            $sub_id = "satis_model_quiz".$model_type."_".$model_quiz_no;
+                                                    ?>
+                                                    <li class="card-contents1" id="<?=$sub_id?>">
+                                                        <input type="hidden" name="satis_model_quizno[<?=$model_type?>][<?=$model_quiz_no?>]" value="<?=$model_quiz_no?>">
+                                                        <button class="delete" type="button" onclick="deleteModelQuiz('<?=$sub_id?>')">x</button>
+                                                        <?=$quiz_list[$model_quiz_no]?>
+                                                    </li>
+                                                    <?php
+                                                        }
+                                                    }
+                                                    ?>
+                                                </ul>
+                                                <ul class="column-title">
+                                                    <li class="card-contents"><input type="text" class="modelTitle" name="model_title[<?=$model_type?>]" value="<?=$model_info['model_title']?>" placeholder="제목" /></li>
+                                                </ul>
+                                            </div>
+                                            <?php
+                                            $sql = "SELECT * FROM MM_analysis_report_model where mm_report_model_idx = '$select_idx' and model_variable_element = 1 ORDER BY quiz_no ASC";
+                                            $result = mysqli_query($gconnet, $sql);
+                                            while($row = mysqli_fetch_array($result)) {
+                                                $element_model_list[$row['model_type']][$row['quiz_no']] = $row['quiz_no'];
+                                            }
+                                            //print_r($element_model_list);
+                                            ?>
+                                            <div class="card-action-wrap">
+                                                <div class="card-action-satismodel">
+                                                    <label>요소만족도</label>
+                                                    <button class="btn-outline-secondary btn-plus-small" onclick="setOptionQuiz('<?=$element_id?>')">+</button>
+                                                    <button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz('<?=$element_id?>')">-</button>
+                                                    <input type="hidden" name="element_model_box[<?=$model_type?>]" value="<?=$element_quiz_no?>">
+                                                    <input type="text" id="txt_element_<?=$boxId?>" value="<?=$quiz_list[$element_quiz_no]?>" readonly>
+                                                    <input type="number" class="input-weight" placeholder="가중치%" name="model_weight[<?=$model_type?>]" value="<?=$model_info['model_weight']?>">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php
+                                    }
+                                    $sql = "SELECT distinct model_type, model_title, model_weight FROM MM_analysis_report_model WHERE report_idx = '$select_idx' and model_type>0 and model_type<100";
+                                    $result = mysqli_query($gconnet, $sql) or error('option error');
+                                    while($model_info = mysqli_fetch_array($result)) {
+                                        $model_type = $model_info['model_type'];
+                                        $boxId = "model_box_".$model_type;
+                                        $model_quiz_id = $boxId."_0";
+                                    ?>
+                                    <div class="card" id="<?=$boxId?>">
+                                        <div class="card-body">
+                                            <p class="card-delete" onclick="deleteModelBox('<?=$boxId?>')"><i class="bi bi-x-lg"></i></p>
+                                            <div class="card-content-wrap card-content-satismodel">
+                                                <ul class="column-contents" id="<?=$model_quiz_id?>">
+                                                    <div class="card-contents-plus">
+                                                        <button id="btn_plus_<?=$model_quiz_id?>" class="btn-secondary btn-plus-small" onclick="setModelQuiz('<?=$model_quiz_id?>')">+</button>
+                                                    </div>
+                                                    <?php
+                                                    if(is_array($model_list[$model_type])) {
+                                                        foreach($model_list[$model_type] as $model_quiz_no => $sub_quiz_no) {
+                                                        $sub_id = "satis_model_quiz".$model_type."_".$model_quiz_no;
+                                                    ?>
+                                                    <li class="card-contents1" id="<?=$sub_id?>">
+                                                        <input type="hidden" name="satis_model_quizno[<?=$model_type?>][<?=$model_quiz_no?>]" value="<?=$model_quiz_no?>">
+                                                        <button class="delete" type="button" onclick="deleteModelQuiz('<?=$sub_id?>')">x</button>
+                                                        <?=$quiz_list[$model_quiz_no]?>
+                                                    </li>
+                                                    <?php
+                                                        }
+                                                    }
+                                                    ?>
+                                                </ul>
+                                                <ul class="column-title">
+                                                    <li class="card-contents"><input type="text" class="modelTitle" name="model_title[<?=$model_type?>]" value="<?=$model_info['model_title']?>" placeholder="제목" /></li>
+                                                </ul>
+                                            </div>
+                                            <div class="card-action-wrap">
+                                                <?php
+                                                $sql2 = "SELECT quiz_no FROM MM_analysis_report_model where mm_report_model_idx ='$select_idx' and model_variable_element=1  and model_type='$model_type' ORDER BY quiz_no ASC";
+                                                $result2 = mysqli_query($gconnet, $sql2);
+                                                $row2 = mysqli_fetch_array($result2);
+                                                $element_quiz_no = $row2['quiz_no'];
+                                                $element_id = "element_model_box[".$model_type."]";
+                                                ?>
+                                                <div class="card-action-satismodel">
+                                                    <label>요소만족도</label>
+                                                    <button class="btn-outline-secondary btn-plus-small" onclick="setOptionQuiz('<?=$element_id?>')">+</button>
+                                                    <button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz('<?=$element_id?>')">-</button>
+                                                    <input type="hidden" name="element_model_box[<?=$model_type?>]" value="<?=$element_quiz_no?>">
+                                                    <input type="text" id="txt_element_<?=$boxId?>" value="<?=$quiz_list[$element_quiz_no]?>" readonly>
+                                                    <input type="number" class="input-weight" placeholder="가중치%" name="model_weight[<?=$model_type?>]" value="<?=$model_info['model_weight']?>">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php
+                                    }
+                                    ?>
+                                    <div class="add-card-wrap">
+                                        <p class="add-card-btn" onclick ="setModelBox('model_box_left')"><i class="bi bi-arrow-down-circle-fill"></i> 상자를 추가합니다. </p>
+                                    </div>
+                                </div>
+                                <?php
+                                    $model_type = 0; // 가운데모델
+                                    $boxId = "model_box_".$model_type;
+                                    $model_quiz_id = $boxId."_0";
+                                    $model_variable_element = 0;
+
+                                $sql = "SELECT * FROM MM_analysis_report_model WHERE report_idx = '$select_idx' and model_type = '$model_type'";
+                                $result = mysqli_query($gconnet, $sql) or error('option error');
+                                $model_info = mysqli_fetch_array($result);
+                                ?>
+                                <div class="satismodel-center-card">
+                                    <div class="card" id="<?=$boxId?>">
+                                        <div class="card-body">
+                                            <div class="card-content-wrap card-content-satismodel">
+                                                <ul class="column-title">
+                                                    <li class="card-contents"><input type="text" class="modelTitle" name="model_title[<?=$model_type?>]" value="<?=$model_info['model_title']?>" placeholder="제목" /></li>
+                                                </ul>
+                                                <ul class="column-contents" id="<?=$model_quiz_id?>">
+                                                    <div class="card-contents-plus">
+                                                        <button id="btn_plus_<?=$model_quiz_id?>" class="btn-secondary btn-plus-small" onclick="setModelQuiz('<?=$model_quiz_id?>'); plusCompare();">+</button>
+                                                    </div>
+                                                    <?php
+                                                    if(is_array($model_list[$model_type])) {
+                                                        foreach($model_list[$model_type] as $model_quiz_no => $sub_quiz_no) {
+                                                        $sub_id = "satis_model_quiz".$model_type."_".$model_quiz_no;
+                                                    ?>
+                                                    <li class="card-contents1" id="<?=$sub_id?>">
+                                                        <input type="hidden" name="satis_model_quizno[<?=$model_type?>][<?=$model_quiz_no?>]" value="<?=$model_quiz_no?>">
+                                                        <button class="delete" type="button" onclick="deleteModelQuiz('<?=$sub_id?>')">x</button>
+                                                        <?=$quiz_list[$model_quiz_no]?>
+                                                    </li>
+                                                    <?php
+                                                        }
+                                                    }
+                                                    ?>
+                                                </ul>
+                                            </div>
+                                            <div class="card-action-wrap">
+                                                <div class="card-action-satismodel">
+                                                    <input type="number" class="input-weight" placeholder="가중치%" name="model_weight[<?=$model_type?>]" value="<?=$model_info['model_weight']?>">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php
+                                    $model_type = 101; // 오른쪽모델
+                                    $boxId = "model_box_".$model_type;
+                                    $model_quiz_id = "model_quiz_".$model_type."_0";
+                                ?>
+                                <div class="satismodel-right-card" id="model_box_right">
+                                    <?php
+                                    $sql = "SELECT distinct model_type, model_title, model_weight, model_variable_element FROM MM_analysis_report_model WHERE report_idx = '$select_idx' and model_type>100";
+                                    $result = mysqli_query($gconnet, $sql) or error('option error');
+                                    if(empty($row = mysqli_fetch_array($result))){
+                                    ?>
+                                    <div class="card" id="<?=$boxId?>">
+                                        <div class="card-body">
+                                            <!--<p class="card-delete card-delete-first " onclick="deleteModelBox('<?=$boxId?>')"><i class="bi bi-x-lg"></i></p>-->
+                                            <div class="card-content-wrap card-content-satismodel">
+                                                <ul class="column-title">
+                                                    <li class="card-contents"><input type="text" class="modelTitle" name="model_title[<?=$model_type?>]" value="" placeholder="제목"  style="word-break:break-all;"/></li>
+                                                </ul>
+                                                <ul class="column-contents" id="<?=$model_quiz_id?>">
+                                                    <div class="card-contents-plus">
+                                                        <button id="btn_plus_<?=$model_quiz_id?>" class="btn-secondary btn-plus-small" onclick="setModelQuiz('<?=$model_quiz_id?>')">+</button>
+                                                    </div>
+                                                    <?php
+                                                    if(is_array($model_list[$model_type])) {
+                                                        foreach($model_list[$model_type] as $model_quiz_no => $sub_quiz_no) {
+                                                    $sub_id = "satis_model_quiz".$model_type."_".$model_quiz_no;
+                                                    ?>
+                                                    <li class="card-contents1" id="<?=$sub_id?>">
+                                                        <input type="hidden" name="satis_model_quizno[<?=$model_type?>][<?=$model_quiz_no?>]" value="<?=$model_quiz_no?>">
+                                                        <button class="delete" type="button" onclick="deleteModelQuiz('<?=$sub_id?>')">x</button>
+                                                        <?=$quiz_list[$model_quiz_no]?>
+                                                    </li>
+                                                    <?php
+                                                        }
+                                                    }
+                                                    ?>
+                                                </ul>
+                                            </div>
+                                            <div class="card-action-wrap">
+                                                <div class="card-action-satismodel">
+                                                    <input type="number" class="input-weight" placeholder="가중치%" name="model_weight[<?=$model_type?>]" value="">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php
+                                    }
+                                    $sql = "SELECT distinct model_type, model_title, model_weight, model_variable_element FROM MM_analysis_report_model WHERE report_idx = '$select_idx' and model_type>100";
+                                    $result = mysqli_query($gconnet, $sql) or error('option error');
+                                    while($model_info = mysqli_fetch_array($result)) {
+                                        $model_type = $model_info['model_type'];
+                                        $boxId = "model_box_".$model_type;
+                                        $model_quiz_id = $boxId."_0";
+                                    ?>
+                                    <div class="card" id="<?=$boxId?>">
+                                        <div class="card-body">
+                                            <p class="card-delete card-delete-first " onclick="deleteModelBox('<?=$boxId?>')"><i class="bi bi-x-lg"></i></p>
+                                            <div class="card-content-wrap card-content-satismodel">
+                                                <ul class="column-title">
+                                                    <li class="card-contents"><input type="text" class="modelTitle" name="model_title[<?=$model_type?>]" value="<?=$model_info['model_title']?>" placeholder="제목" /></li>
+                                                </ul>
+                                                <ul class="column-contents" id="<?=$model_quiz_id?>">
+                                                    <div class="card-contents-plus">
+                                                        <button id="btn_plus_<?=$model_quiz_id?>" class="btn-secondary btn-plus-small" onclick="setModelQuiz('<?=$model_quiz_id?>')">+</button>
+                                                    </div>
+                                                    <?php
+                                                    if(is_array($model_list[$model_type])) {
+                                                        foreach($model_list[$model_type] as $model_quiz_no => $sub_quiz_no) {
+                                                        $sub_id = "satis_model_quiz".$model_type."_".$model_quiz_no;
+                                                    ?>
+                                                    <li class="card-contents1" id="<?=$sub_id?>">
+                                                        <input type="hidden" name="satis_model_quizno[<?=$model_type?>][<?=$model_quiz_no?>]" value="<?=$model_quiz_no?>">
+                                                        <button class="delete" type="button" onclick="deleteModelQuiz('<?=$sub_id?>')">x</button>
+                                                        <?=$quiz_list[$model_quiz_no]?>
+                                                    </li>
+                                                    <?php
+                                                        }
+                                                    }
+                                                    ?>
+                                                </ul>
+                                            </div>
+                                            <div class="card-action-wrap">
+                                                <div class="card-action-satismodel">
+                                                    <input type="number" class="input-weight" placeholder="가중치%" name="model_weight[<?=$model_type?>]" value="<?=$model_info['model_weight']?>">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php
+                                    }
+                                    ?>
+                                    <div class="add-card-wrap">
+                                        <p class="add-card-btn" onclick ="setModelBox('model_box_right')"><i class="bi bi-arrow-down-circle-fill"></i> 상자를 추가합니다. </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="original-bg-style margin50 " id="satismodel-step3">
+                        <div onclick="fnScrollTop( 'section3') " class="sec_title sec_title3 contentsTop ">
+                            <h2 class="stepTit ">
+                                <span class="stepBadge ">STEP 3</span>
+                                <br />분석옵션설정
+                            </h2>
+                        </div>
+                        <section id="section3">
+                            <div class="infobox">
+                                <div class="announce">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    <span class="fontcolor-red">원점수</span> 조사에서 적용한 점수입니다. (ex: 원점수 5점일 경우 100점으로 변환)
+                                </div>
+                            </div>
+                            <table class="table-step table-step3 ">
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                                <span class="input-group-text w130 m10 border-right">
+                                                    점수변환방식
+                                                </span>
+                                            <div class="step3-optionGroup">
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="mm_report_percent" value="1" <?=($opt_info['mm_report_percent'] == 1) ? "checked" : ""?> />
+                                                    <label class="form-check-label m10">원점수 그대로</label>
+                                                </div>
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="mm_report_percent" value="2" <?=($opt_info['mm_report_percent'] == 2) ? "checked" : ""?> />
+                                                    <label class="form-check-label">100점으로 변환</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                                <span class="input-group-text w130 m10 border-right">
+                                                    원점수 기준
+                                                </span>
+                                            <div class="step3-optionGroup">
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="mm_report_score" id="option_score_five " value="5" <?=($opt_info['mm_report_score'] == 5) ? "checked" : ""?> />
+                                                    <label class="form-check-label m10" for="option_score_five ">5점</label>
+                                                </div>
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="mm_report_score" id="option_score_seven " value="7" <?=($opt_info['mm_report_score'] == 7) ? "checked" : ""?> />
+                                                    <label class="form-check-label m10" for="option_score_seven ">7점</label>
+                                                </div>
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="mm_report_score" id="option_score_nine " value="9" <?=($opt_info['mm_report_score'] == 9) ? "checked" : ""?> />
+                                                    <label class="form-check-label m10" for="option_score_nine ">9점</label>
+                                                </div>
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="mm_report_score" id="option_score_ten " value="10" <?=($opt_info['mm_report_score'] == 10) ? "checked" : ""?> />
+                                                    <label class="form-check-label m10" for="option_score_ten ">10점</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                                <span class="input-group-text w130 m10 border-right checked">
+                                                    숫자 자리수
+                                                </span>
+                                            <div class="sosu_1">
+                                                <span>점수의 소수점</span>
+                                                <input type="number" maxlength="1" placeholder="3" name="mm_report_scorepoint" value="3" value="<?=$opt_info['mm_report_scorepoint']?>" id="option_scorepoint" message="점수의 소수점" min="0">
+                                                <span>째 자리,&nbsp;</span>
+                                                <span>비율의 소수점</span>
+                                                <input type="number" maxlength="1" placeholder="1" name="mm_report_scorepoint2" value="1" value="<?=$opt_info['mm_report_scorepoint2']?>" id="option_frequenpoint" message="빈도의 소수점" min="0">
+                                                <span>째 자리</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="announce announce-light">
+                                            <p></p>
+                                            <ul>
+                                                <li>보고서에 출력될 숫자의 자리수를 설정합니다.</li>
+                                            </ul>
+                                            <p></p>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                            </table>
+                        </section>
+                    </div>
+                    <div class="original-bg-style margin50 " id="satismodel-step4">
+                        <div onclick="fnScrollTop( 'section4') " class="sec_title sec_title3 contentsTop ">
+                            <h2 class="stepTit ">
+                                <span class="stepBadge ">STEP 4</span>
+                                <br />비교점수입력
+                            </h2>
+                        </div>
+                        <section id="section4">
+                            <?php
+                            // 추세점수 기준년도
+                            $compare_base_year = $opt_info['compare_base_year'];
+
+                            $sql = "SELECT * FROM MM_analysisMM_step_report WHERE report_idx = '$select_idx'";
+                            $result = mysqli_query($gconnet, $sql) or error('option error');
+                            $i = 0;
+                            while($row = mysqli_fetch_array($result)) {
+                                if($row['analysis_type_detail'] == 1) {
+                                    $variable_list[$i] = $row['quiz_title'];
+                                } else {
+                                    $variable_list[$i] = $row['model_title'];
+                                }
+                                $i++;
+                            }
+                            ?>
+                            <table class="table-step table-step4">
+                                <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                                    <span class="input-group-text w130 m10 border-right">
+                                                        추세점수 비교입력
+                                                    </span>
+                                            <div class="step4-optionGroup">
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="trendScore" value="1" />
+                                                    <label class="form-check-label m100">반영</label>
+                                                </div>
+                                                <div class="form-check table-form-check" style="padding-left:0px;">
+                                                    <span style="font-size:1em;">: 기준년도
+                                                    <input type="number" placeholder="(년도입력)" name="compare_base_year" value="<?=$compare_base_year?>" maxlength="4" style="width:65px;font-size:13px;">
+                                                    </span>
+                                                </div>
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="trendScore" value="0" checked />
+                                                    <label class="form-check-label">미반영</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                                    <span class="input-group-text w130 m10 border-right">
+                                                        벤치마킹 집단 점수
+                                                    </span>
+                                            <div class="step4-optionGroup">
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="benchmarkingGroupScore" value="1" />
+                                                    <label class="form-check-label m10">반영</label>
+                                                </div>
+                                                <div class="form-check table-form-check">
+                                                    <input class="form-check-input" type="radio" name="benchmarkingGroupScore" value="0" checked />
+                                                    <label class="form-check-label">미반영</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="tdWrap">
+                                            <div class="tr_th">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead>
+                                                    <tr>
+                                                        <th scope="col" class="table-title">문항명</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+
+                                                    <?php
+                                                    //print_r($variable_list);
+                                                    if(is_array($variable_list)) {
+                                                        foreach($variable_list as $title) {
+                                                    ?>
+                                                    <tr>
+                                                        <td scope="col" class="table-title"> <?=$title?> </td>
+                                                    </tr>
+                                                    <?php
+                                                        }
+                                                    }
+                                                    ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="tr-td-wrap">
+                                                <?php
+                                                $trtdId=1;
+                                                $sql = "SELECT * FROM MM_analysis_report_compare WHERE report_idx = '$select_idx'";
+                                                $result = mysqli_query($gconnet, $sql) or error('option error');
+                                                ?>
+                                                <div class="tr-td" id="<?=$trtdId?>">
+                                                    <table class="table table-sm table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th scope="col" class="table-number">
+                                                                    <input type="number" class="form-control" name="compare_column" placeholder="(년도입력)년도" value="">
+                                                                    <button type="reset" class="btn-outline-secondary btn-reset-small"><i class="bi bi-arrow-clockwise"></i></button>
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            if(is_array($variable_list)) {
+                                                                foreach($variable_list as $title) {
+                                                            ?>
+                                                            <tr>
+                                                                <td scope="col" class="table-number table-number2"><input type="number" class="form-control" name="compare_value[<?=$trtdId?>][<?=$title?>]" placeholder="숫자입력" value=""></td>
+                                                            </tr>
+                                                            <?php
+                                                                }
+                                                            }
+                                                            ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <!--<div class="tr-td" id="<?=$trtdId?>">
+                                                    <table class="table table-sm table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th scope="col" class="table-number">
+                                                                    <input type="number" class="form-control" name="compare_column" placeholder="(년도입력)년도" value="">
+                                                                    <button type="reset" class="btn-outline-secondary btn-reset-small"><i class="bi bi-arrow-clockwise"></i></button>
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            if(is_array($variable_list)) {
+                                                                foreach($variable_list as $title) {
+                                                            ?>
+                                                            <tr>
+                                                                <td scope="col" class="table-number table-number2"><input type="number" class="form-control" name="compare_value" placeholder="숫자입력" value=""></td>
+                                                            </tr>
+                                                            <?php
+                                                                }
+                                                            }
+                                                            ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>-->
+                                                <div class="tr-button"><button class="btn-secondary btn-plus-small" onclick="plusCompare('<?=$trtdId?>')">+</button></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="tdWrap">
+                                            <div class="tr_th">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col" class="table-title">문항명</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php
+                                                        if(is_array($variable_list)) {
+                                                            foreach($variable_list as $title) {
+                                                        ?>
+                                                        <tr>
+                                                            <td scope="col" class="table-title"> <?=$title?> </td>
+                                                        </tr>
+                                                        <?php
+                                                            }
+                                                        }
+                                                        ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="tr-td-wrap">
+                                                <div class="tr-td" id="tr-td-">
+                                                    <table class="table table-sm table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th scope="col" class="table-number">
+                                                                    <input type="text" class="form-control" name="compare_column" placeholder="(이름입력)" value="">
+                                                                    <button type="reset" class="btn-outline-secondary btn-reset-small"><i class="bi bi-arrow-clockwise"></i></button>
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            if(is_array($variable_list)) {
+                                                                foreach($variable_list as $title) {
+                                                            ?>
+                                                            <tr>
+                                                                <td scope="col" class="table-number table-number2"><input type="number" class="form-control" name="compare_value" placeholder="숫자입력" value=""></td>
+                                                            </tr>
+                                                            <?php
+                                                                }
+                                                            }
+                                                            ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="tr-button"><button class="btn-secondary btn-plus-small" onclick="">+</button></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+<!--                                <tr class="total-variables">-->
+<!--                                    <td>-->
+<!--                                        <p>변수총계 :-->
+<!--                                            <span>변수총계합</span>-->
+<!--                                        </p>-->
+<!--                                    </td>-->
+<!--                                    <td>-->
+<!--                                        <p>변수총계 :-->
+<!--                                            <span>변수총계합</span>-->
+<!--                                        </p>-->
+<!--                                    </td>-->
+<!--                                </tr>-->
+                                </tbody>
+                            </table>
+                        </section>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<iframe name="_fra_admin" width="90%" height="300" style="display:none"></iframe>
+
+<script>
+    $(function() {
+        $('.mindmap').mindmap();
+    });
+</script>
+
+</body>
+
+</html>

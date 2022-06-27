@@ -1,0 +1,74 @@
+<?php
+include_once "../inc/common.php";
+include_once "../inc/db_conn_datain.php";
+?>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th scope="col">선택</th>
+            <th scope="col">프로젝트명</th>
+            <th scope="col ">문항수</th>
+            <th scope="col">데이터건수</th>
+            <th scope="col">등록날짜</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php
+        $page = $_REQUEST['page'];
+        $searchkey = $_REQUEST['searchkey'];
+
+        $param = "searchkey=".$searchkey;
+
+        $search_sql = " WHERE memid = '$memid' ";
+        if($subid != "") $search_sql .= " AND subid = '$subid' ";
+        if($searchkey != "") $search_sql .= " AND analysis_title LIKE '%".$searchkey."%' ";
+
+        $sql = "SELECT COUNT(idx) AS cnt FROM wise_analysis_main $search_sql";
+        $result = mysqli_query($dconnet, $sql) or error('error');
+        $row = mysqli_fetch_array($result);
+        $total = $row['cnt'];
+
+        $rows = 5;
+        $lists = 10;
+
+        $page_count = ceil($total/$rows);
+        if(!$page || $page > $page_count) $page = 1;
+        $start = ($page-1)*$rows;
+        $no = $total-$start;
+
+        $sql = "SELECT m.*, DATE_FORMAT(m.wdate, '%y.%m.%d') AS wdate, q.quiz_cnt
+                FROM wise_analysis_main AS m, (SELECT analysis_idx, COUNT(idx) AS quiz_cnt FROM wise_analysis_quiz GROUP BY analysis_idx) AS q  
+                $search_sql AND m.idx = q.analysis_idx ORDER BY idx DESC LIMIT $start, $rows";
+        $result = mysqli_query($dconnet, $sql) or error('error');
+        while($row = mysqli_fetch_array($result)) {
+        ?>
+        <tr>
+            <td>
+                <input class="form-check-input" type="radio" name="project_analysis_idx" id="analysis<?=$no?>" value="<?=$row['idx']?>" />
+            </td>
+            <td class="projName"><label class="form-check-label" for="analysis<?=$no?>"><?=$row['analysis_title']?></label></td>
+            <td><?=$row['quiz_cnt']?></td>
+            <td><?=$row['data_cnt']?></td>
+            <td><?=$row['wdate']?></td>
+        </tr>
+        <?php
+            $no--;
+        }
+        if($total == 0) {
+        ?>
+        <tr>
+            <td colspan="5">
+                등록된 항목이 없습니다.
+            </td>
+        </tr>
+        <?php  
+        }
+        ?>
+    </tbody>
+</table>
+<nav aria-label="Page">
+    <?php 
+    $ajax_page_info = array('id' => 'projectListAnalysis', 'func' => 'setList', 'url' => $_SERVER['PHP_SELF']);
+    print_pagelist($page, $lists, $page_count, $param, "", "", $ajax_page_info); 
+    ?>
+</nav>

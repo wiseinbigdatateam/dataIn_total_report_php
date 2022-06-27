@@ -1,0 +1,293 @@
+<?php
+include "./inc/header.html";
+
+$param_list = array();
+if(is_array($sstatus)) {
+    foreach($sstatus as $ii => $scode) {
+        if($param != "") $param .= "&";
+        $param_list[] = "sstatus[]=".$scode;
+    }
+}
+if($searchkey != "") $param_list[] = "searchkey=".$searchkey;
+if($sdate != "") $param_list[] = "sdate=".$sdate;
+if($edate != "") $param_list[] = "edate=".$edate;
+
+if(is_array($param_list)) $param = implode("&", $param_list);
+?>
+<script>
+$(document).ready(function() {
+
+    setList("reportList", "ajax_report_list.php?<?=$param?>", "");
+
+    $("#ck-all").on("change", function() {
+        $("input[name='sstatus[]']").prop("checked", $(this).prop("checked"));
+        setStatusCode();
+    });
+
+    $("input[name='sstatus[]']").on("change", function() {
+        setStatusCode();
+    });
+});
+
+function setStatusCode() {
+    var statusname = "";
+    var statuschk = 0;
+    $("input[name='sstatus[]']").each(function() {
+        if($(this).prop("checked") == true) {
+            statusname += $(this).attr("codename") + ",";
+            statuschk++;
+        }
+    });
+    $("#text_status").val(statusname.slice(0, -1));
+
+    if(statuschk == 0 || statuschk == $("input[name='sstatus[]']").length) {
+        $("#ck-all").prop("checked", true);
+        $("#text_status").val("");
+    } else {
+        $("#ck-all").prop("checked", false);
+    }
+}
+
+function openReport(url) {
+    window.open(url, "");
+}
+
+function deleteReport(idx) {
+    if(confirm('삭제 후 복구가 불가능합니다. \n정말 삭제하시겠습니까?')) {
+        $.post("my_report_act.php", "mode=delete&idx=" + idx, function(data) {
+            var result = data.split("|");
+            if(result[0] == "OK") {
+                alert("삭제하였습니다.");
+                location.reload();
+            } else if(result[0] == "ERR") {
+                alert(result[1]);
+            } else {
+                alert(data);
+            }
+        })
+    }
+}
+
+function copyReport(idx) {
+    $.post("new_report_act.php", "mode=insert&copy=Y&copyidx=" + idx, function(data) {
+        var result = data.split("|");
+        if(result[0] == "OK") {
+            if(result[2] != "") {
+                location.href= result[2]+".html?mode=new&idx=" + result[1] + "&copyidx=" + idx;
+            }
+        } else if (result[0] == "ERR") {
+            alert(result[1]);
+        } else {
+            console.log(data);
+            alert(data);
+        }
+    })    
+}
+
+function submitFrom(idx) {
+
+    $.post("satisfaction_act.php" , "mode=report_insert&idx=" + idx, function(data) {
+        var result = data.split("|");
+        console.log(result);
+        if (result[0] == "OK") {
+            alert('모델 생성을 완료하였습니다. 보고서 생성 시 시간이 소요될 수 있습니다.' + idx );
+            document.location = "my_report.html";
+        } else if (result[0] == "ERR") {
+            alert(result[1]);
+        } else {
+            alert(data);
+        }
+    })
+
+}
+</script>
+        <div id="container">
+            <div id="textWrap">
+                <h2 class="title">작업리스트</h2>
+                <p class="description">
+                    분석 모델 생성에서 작성한 리스트입니다.
+                </p>
+            </div>
+            <section id="contentsWrap" class="original-bg-style">
+                <form id="searchFrm" action="<?=$_SERVER['PHP_SELF']?>" method="post">
+                    <div class="contentsTop contentsTop1 input-group">
+                        <button type="button" class="btn btn-secondary dropdown-toggle w130" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            상태
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <input class="form-check-input" type="checkbox" id="ck-all" checked />
+                                    <label class="form-check-label" for="ck-all"> 모두 </label>
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider" />
+                            </li>
+                            <?php
+                            $text_status_list = array();
+
+                            $status_list = get_report_status();
+                            if(is_array($status_list)) {
+                                foreach($status_list as $status_code => $status_name) {
+                                    $chk = "";
+                                    $status_code = "'".$status_code."'";
+                                    if(is_array($sstatus)) { 
+                                        if(in_array($status_code, $sstatus)) { 
+                                            $chk = "checked";
+                                            $text_status_list[] = $status_name;
+                                        }
+                                    }
+                            ?>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <input class="form-check-input" type="checkbox" id="ck-<?=$status_code?>" name="sstatus[]" value="<?=$status_code?>" codename="<?=$status_name?>" <?=$chk?> />
+                                    <label class="form-check-label" for="ck-<?=$status_code?>"> <?=$status_name?> </label>
+                                </a>
+                            </li>
+                            <?php
+                                }
+                            }
+                            $text_status = (is_array($text_status_list)) ? implode(",", $text_status_list) : "";
+                            ?>
+                        </ul>
+                        <input type="text" class="form-control input-condition" id="text_status" readonly aria-label="보고서 상태 검색" placeholder="모두" value="<?=$text_status?>" />
+                        <span class="input-group-text w130 border-left"> 프로젝트명 </span>
+                        <input type="text" name="searchkey" value="<?=$searchkey?>" class="form-control input-projName" placeholder="검색할 프로젝트명을 입력하세요" aria-label="Input group example" aria-describedby="basic-addon1" />
+                    </div>
+                    <div class="contentsTop contentsTop3 input-group">
+                        <span class="input-group-text w130"> 시작날짜 </span>
+                        <input type="date" name="sdate" value="<?=$sdate?>" class="form-control input-startCalendar" />
+                        <span class="date-wave">~</span>
+                        <span class="input-group-text w130 border-left"> 종료날짜 </span>
+                        <input type="date" name="edate" value="<?=$edate?>" class="form-control input-finishCalendar" />
+                        <button type="submit" class="btn btn-outline-primary btn-search" data-bs-toggle="modal" data-bs-target="#search">
+                            <i class="bi bi-search" style="margin-right: 5px"></i>검색하기
+                        </button>
+                    </div>
+                    <div class="table-name"><i class="bi bi-table"></i> 분석모델 프로젝트 리스트</div>
+                    <div id="reportList">
+                    </div>
+                    <!--
+                    <button class="btn btn-primary btn-copySetting" data-bs-toggle="modal" data-bs-target="#copySetting">
+                        <i class="bi bi-clipboard-check" style="margin-right: 5px"></i>
+                        설정 복사
+                    </button>
+                    -->
+                </form>
+            </section>
+        </div>
+    </div>
+
+
+    <!-- search Modal -->
+    <div class="modal fade" id="copySetting" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-copySetting">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel"> 설정 복사 </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary" type="button" id="button-addon1">
+                <i class="bi bi-search"> 검색</i>
+              </button>
+                        <input type="text" class="form-control input-importProj" placeholder="검색할 프로젝트명을 입력하세요" />
+                    </div>
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">선택</th>
+                                <th scope="col">형식</th>
+                                <th scope="col">프로젝트명</th>
+                                <th scope="col">생성날짜</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <input class="form-check-input" type="radio" name="exampleRadios" id="radios1" value="option" checked/>
+                                </td>
+                                <td>AHP</td>
+                                <td class="projName">This place is marked as the project name.</td>
+                                <td>yy.mm.dd</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input class="form-check-input" type="radio" name="exampleRadios" id="radios2" value="option" />
+                                </td>
+                                <td>다면평가</td>
+                                <td class="projName">This place is marked as the project name.</td>
+                                <td>yy.mm.dd</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input class="form-check-input" type="radio" name="exampleRadios" id="radios3" value="option" />
+                                </td>
+                                <td>서비스</td>
+                                <td class="projName">This place is marked as the project name.</td>
+                                <td>yy.mm.dd</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input class="form-check-input" type="radio" name="exampleRadios" id="radios4" value="option" />
+                                </td>
+                                <td>다면평가2</td>
+                                <td class="projName">This place is marked as the project name.</td>
+                                <td>yy.mm.dd</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input class="form-check-input" type="radio" name="exampleRadios" id="radios5" value="option" />
+                                </td>
+                                <td>서비스2</td>
+                                <td class="projName">This place is marked as the project name.</td>
+                                <td>yy.mm.dd</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page">
+                        <ul class="pagination">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item active">
+                                <a class="page-link" href="#">1</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">2</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">3</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="modal-footer">
+                    <div class="notice">
+                        <span><i class="bi bi-check"></i>안내 : </span> 설정 복사 시 프로젝트 데이터에 따라 보고서 결과가 달리 나올 수 있습니다.
+                    </div>
+                    <button type="button" class="btn modal-btn-orange">
+                    설정 복사
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    취소
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    
+<?php
+include "./inc/footer.html";
+?>

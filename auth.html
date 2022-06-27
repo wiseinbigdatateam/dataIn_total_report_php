@@ -1,0 +1,64 @@
+<?php
+include "./inc/common.php";
+include "./inc/db_conn_datain.php";
+//include "./report/pro_inc/include_default.php";
+
+function get_cipher_key() {
+	$info[0] = "aes-256-cbc";	// cipher
+	$info[1] = "datain";			// passwd
+	return $info;
+}
+
+function get_cipher_decode($encrypted) {
+
+	$arr = get_cipher_key();
+	list($cipher, $passwd) = $arr;
+
+	$password = $passwd; // 비밀번호 키
+
+	// 256 bit 키를 만들기 위해서 비밀번호를 해시해서 첫 32바이트를 사용합니다.
+	$password = substr(hash('sha256', $password, true), 0, 32);
+	//echo "비밀번호 바이너리:" . $password . "<br/>";
+
+	// Initial Vector(IV)는 128 bit(16 byte)입니다.
+	$iv = chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0);
+
+	// 복호화
+	$decrypted = openssl_decrypt(base64_decode($encrypted), $cipher, $password, OPENSSL_RAW_DATA, $iv);
+
+	return $decrypted;
+}
+
+$memid = get_cipher_decode($_GET['key']);
+$subid = get_cipher_decode($_GET['subkey']);
+$email = get_cipher_decode($_GET['email']);
+/*
+echo "memid => ".$memid."<br>";
+echo "subid => ".$subid."<br>";
+*/
+
+$search_sql = "";
+if($subid != "") $search_sql .= " AND s.id = '$subid'";
+$sql = "SELECT m.name, s.name AS subname, s.email FROM wiz_member AS m LEFT JOIN wiz_member_sub AS s ON m.id = s.mainid WHERE m.id = '$memid' $search_sql";
+$result = mysqli_query($dconnet, $sql) or die(mysqli_error($dconnet));
+$row = mysqli_fetch_array($result);
+
+$name = $row['name'];
+if($subid != "") {
+    $name = $row['subname'];
+    $email = $row['email'];
+}
+
+$permit_info = get_payment_permit($memid);
+
+if($permit_info['report_project'] == "N" || $permit_info['report_project'] == "") {
+    echo "<script>alert('통합리포팅 이용 권한이 없습니다.');self.close();</script>";
+    exit;
+}
+
+$_SESSION['wiz_session']['id'] = $memid;
+$_SESSION['wiz_session']['subid'] = $subid;
+$_SESSION['wiz_session']['email'] = $email;
+$_SESSION['wiz_session']['name'] = $name;
+?>
+<script>document.location  = "/report/my_report.html";</script>

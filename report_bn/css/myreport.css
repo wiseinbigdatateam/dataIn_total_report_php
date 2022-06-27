@@ -1,0 +1,463 @@
+.report-manage {
+    overflow: hidden;
+}
+
+.report-manage .rep-man{
+}
+
+.report-manage .rep-man .report-title{
+    font-size: 15px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 400;
+    color: #fff;
+    padding: 5px 20px;
+    display: inline-block;
+    border-radius: 5px;
+    cursor: pointer;
+    background: url('../img/report-arrow_u.png');
+    background-size: 12px 9px;
+    background-repeat: no-repeat;
+    background-position: 110px center;
+    background-color: #517eb8;
+    border-right: 1px solid #c9c9c9;
+    padding-right: 40px;
+    border-left: 1px solid #c9c9c9;
+}
+
+.report-manage .rep-man.on .report-title{
+    background: url('../img/report-arrow.png');
+    background-size: 12px 9px;
+    background-repeat: no-repeat;
+    background-position: 110px center;
+    background-color: #517eb8;
+}
+
+
+.report-manage .rep-man .report-list{
+    display: none;
+}
+
+
+.report-manage .rep-man.on .report-list{
+    display: block;
+}
+
+.report-manage .rep-man .list-th{
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 400;
+    margin-top: 20px;
+    border-collapse: collapse;
+    width: calc( 100% - 30px );
+    padding-right: 30px;
+    overflow: hidden;
+}
+
+
+.report-manage .rep-man .list-th div{
+    font-weight: 400;
+    border-bottom: 1px solid #c9c9c9;
+    padding: 5px 0px;
+    background-color: #517eb8;
+    color: #fff;
+    float: left;
+    text-align: center;
+}
+
+
+.report-manage .rep-man .list-th div:nth-child(1){
+    width: 10%;
+}
+
+.report-manage .rep-man .list-th div:nth-child(2){
+    width: 45%;
+}
+
+.report-manage .rep-man .list-th div:nth-child(3){
+    width: 15%;
+}
+
+
+.report-manage .rep-man .list-th div:nth-child(4){
+    width: 15%;
+}
+
+.report-manage .rep-man .list-th div:nth-child(5){
+    width: 15%;
+}
+
+
+.report-manage .rep-man .list-td{
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 400;
+    width: 100%;
+    height: 300px;
+}
+
+.report-manage .rep-man .list-td .con-line{
+    width: calc( 100% - 30px );
+    padding-right: 30px;
+}
+
+.report-manage .rep-man .list-td .rl-con{
+    font-weight: lighter;
+    border-bottom: 1px solid #c9c9c9;
+    padding: 5px 0px;
+    background-color: #fff;
+    color: black;
+    text-align: center;
+    font-size: 14px;
+    float: left;
+    height: 45px;
+}
+
+.report-manage .rep-man .list-td .rl-con:nth-child(1){
+    width: 10%;
+    line-height: 45px;
+}
+
+.report-manage .rep-man .list-td .rl-con:nth-child(2){
+    width: 45%;
+}
+
+.report-manage .rep-man .list-td .rl-con:nth-child(3){
+    width: 15%;
+    line-height: 45px;
+}
+
+.report-manage .rep-man .list-td .rl-con:nth-child(4){
+    width: 15%;
+    line-height: 45px;
+}
+
+.report-manage .rep-man .list-td .rl-con:nth-child(5){
+    width: 15%;
+    line-height: 45px;
+}
+
+.report-manage .rep-man .list-td  .rl-con input{
+    width: calc( 100% - 20px );
+    margin: 0 auto;
+}
+
+.report-manage .rep-man .list-td .rl-con button{
+    display: inline-block;
+    padding: 3px 10px;
+    margin: 0 auto;
+    background-color: #eee;
+    color: #727272;
+    border-radius: 5px;
+}
+
+.report-manage .rep-man .list-td .rl-con button:hover{
+    background-color: #517eb8;
+    color: #fff;
+}
+
+
+.report-manage .rep-man .list-td .rl-con .flag{
+    background-color: #eee;
+    padding: 3px 10px;
+    font-size: 12px;
+    border-radius: 20px;
+    margin-bottom: 5px;
+    display: inline-block;
+}
+
+
+
+
+
+
+
+
+.report-manage .rep-opt .option-title{
+    font-size: 15px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 400;
+    color: #fff;
+    padding: 5px 20px;
+    display: inline-block;
+    border-radius: 5px;
+    cursor: pointer;
+    background: url('../img/report-arrow_u.png');
+    background-size: 12px 9px;
+    background-repeat: no-repeat;
+    background-position: 100px center;
+    background-color: #517eb8;
+    border-right: 1px solid #c9c9c9;
+    padding-right: 40px;
+    border-left: 1px solid #c9c9c9;
+    margin-top: 40px;
+}
+
+.report-manage .rep-opt.on .option-title{
+    background: url('../img/report-arrow.png');
+    background-size: 12px 9px;
+    background-repeat: no-repeat;
+    background-position: 100px center;
+    background-color: #517eb8;
+}
+
+
+.report-manage .rep-opt .option-list{
+    display: none;
+}
+
+.report-manage .rep-opt.on .option-list{
+    display: block;
+}
+
+.report-manage .rep-opt .list-th{
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 400;
+    margin-top: 20px;
+    border-collapse: collapse;
+    width: calc( 100% - 30px );
+    padding-right: 30px;
+    overflow: hidden;
+}
+
+
+.report-manage .rep-opt .list-th div{
+    font-weight: 400;
+    border-bottom: 1px solid #c9c9c9;
+    padding: 5px 0px;
+    background-color: #517eb8;
+    color: #fff;
+    float: left;
+    text-align: center;
+}
+
+/* 2021-07-09 변경 주석처리 후 새 css 작성 */
+/* .report-manage .rep-opt .list-th div:nth-child(1){
+    width: 45%;
+}
+
+.report-manage .rep-opt .list-th div:nth-child(2){
+    width: 15%;
+}
+
+.report-manage .rep-opt .list-th div:nth-child(3){
+    width: 15%;
+}
+
+.report-manage .rep-opt .list-th div:nth-child(4){
+    width: 10%;
+}
+.report-manage .rep-opt .list-th div:nth-child(5){
+    width: 15%;
+} */
+
+
+.report-manage .rep-opt .list-th div:nth-child(1){
+    width: 10%;
+}
+
+.report-manage .rep-opt .list-th div:nth-child(2){
+    width: 35%;
+}
+
+.report-manage .rep-opt .list-th div:nth-child(3){
+    width: 15%;
+}
+
+.report-manage .rep-opt .list-th div:nth-child(4){
+    width: 15%;
+}
+.report-manage .rep-opt .list-th div:nth-child(5){
+    width: 10%;
+}
+.report-manage .rep-opt .list-th div:nth-child(6){
+    width: 15%;
+}
+
+
+
+
+.report-manage .rep-opt .list-td{
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 400;
+    width: 100%;
+    height: 300px;
+}
+
+.report-manage .rep-opt .list-td .con-line{
+    width: calc( 100% - 30px );
+    padding-right: 30px;
+}
+
+.report-manage .rep-opt .list-td .rl-con{
+    font-weight: lighter;
+    border-bottom: 1px solid #c9c9c9;
+    padding: 5px 0px;
+    background-color: #fff;
+    color: black;
+    text-align: center;
+    font-size: 14px;
+    float: left;
+    height: 45px;
+}
+
+/* 2021-07-09 수정 주석 처리 후 새 css 추가 */
+/* .report-manage .rep-opt .list-td .rl-con:nth-child(1){
+    width: 45%;
+}
+
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(2){
+    width: 15%;
+    line-height: 45px;
+}
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(3){
+    width: 15%;
+    line-height: 45px;
+}
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(5){
+    width: 15%;
+    line-height: 45px;
+}
+.report-manage .rep-opt .list-td .rl-con:nth-child(4){
+    width: 10%;
+    border-left: none;
+    line-height: 45px;
+} */
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(1){
+    width: 10%;
+    line-height: 45px;
+    color: #727272;
+}
+
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(2){
+    width: 35%;
+}
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(3){
+    width: 15%;
+    line-height: 45px;
+}
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(5){
+    width: 10%;
+    line-height: 45px;
+}
+.report-manage .rep-opt .list-td .rl-con:nth-child(4){
+    width: 15%;
+    border-left: none;
+    line-height: 45px;
+}
+
+.report-manage .rep-opt .list-td .rl-con:nth-child(6){
+    width: 15%;
+    line-height: 45px;
+}
+
+.report-manage .rep-opt .list-td  .rl-con input{
+    width: calc( 100% - 20px );
+    margin: 0 auto;
+}
+
+.report-manage .rep-opt .list-td .rl-con button{
+    display: inline-block;
+    padding: 3px 10px;
+    margin: 0 auto;
+    background-color: #eee;
+    color: #727272;
+    border-radius: 5px;
+}
+
+.report-manage .rep-opt .list-td .rl-con button:hover{
+    background-color: #517eb8;
+    color: #fff;
+}
+
+
+.report-manage .rep-opt .list-td .rl-con .flag{
+    background-color: #eee;
+    padding: 3px 10px;
+    font-size: 12px;
+    border-radius: 20px;
+    margin-bottom: 5px;
+    display: inline-block;
+}
+
+
+
+
+@media screen and (max-width: 1450px){
+
+    .report-manage {
+        overflow: hidden;
+        margin: 0px 40px;
+    }
+
+    section .body_w .main_pro .main_cmenu ul li:nth-child(5){
+        margin-left: 27px;
+    }
+
+}
+
+/* 2021-07-09 추가 */
+.report-title.title-btn {
+    position: relative;
+}
+
+.report-title.title-btn .additionalText {
+    position: absolute;
+    color: #000;
+    font-size: 11px;
+    font-weight: 400;
+    width: 600px;
+    top: 0;
+    left: 115%;
+    cursor: text;
+}
+/*
+.option-title.title-btn .additionalText {
+    position: absolute;
+    color: #000;
+    font-size: 11px;
+    font-weight: 400;
+    width: 600px;
+    top: 660px;
+    left: 15.6%;
+    cursor: text;
+}
+*/
+.rl-con input {
+    cursor: text;
+}
+
+.rl-con .download {
+    position: relative;
+}
+.rl-con .downloadExcel {
+    width: 18px;
+    height: 18px;
+    background: url(../img/excel.png) no-repeat center / 100% 100%;
+    margin-left: 8px !important;
+    background-color: transparent !important;
+}
+/* --------------- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
