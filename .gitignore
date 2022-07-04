@@ -1,1 +1,9 @@
-data/ #세션부분
+/data/ #
+
+auth.html
+
+/inc/
+
+/report_bn/
+
+/vendor/
