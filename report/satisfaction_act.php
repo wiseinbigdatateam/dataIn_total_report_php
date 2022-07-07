@@ -87,6 +87,8 @@ if(in_array($mode, array("report_insert", "report_temporary", "report_analyzing"
     $sql = "DELETE FROM MM_analysis_report_case WHERE mm_report_case_idx = '$idx' ";
     mysqli_query($gconnet, $sql);
 
+//    print_r($case_quiz_no);
+
     if(is_array($case_quiz_no)) {
         foreach($case_quiz_no as $case_no => $case_quizno) {
             if(is_array($case_item_details[$case_no])) {
@@ -126,13 +128,14 @@ if(in_array($mode, array("report_insert", "report_temporary", "report_analyzing"
         }
     }
     //요소만족도 있으면 해당 model_variable_element=1
+//    print_r($element_model_box);
     if(is_array($element_model_box)){
-        foreach($element_model_box as $model_type => $element_quiz_list) {
+        foreach($element_model_box as $model_type  => $element_quiz_list) {
             if($element_quiz_list != '') {
                 $sql = "INSERT INTO MM_analysis_report_model
                         (mm_report_model_idx, analysis_idx, report_idx, model_status, quiz_no, model_type, model_title, model_weight, model_variable_element, wdate)
                         VALUES
-                        ('$idx','$dataInIdx', '$idx', 'com','$element_quiz_list', '$model_type','model_title','0',1,now())";
+                        ('$idx','$dataInIdx', '$idx', 'com','$element_quiz_list', '$model_type'+1,'model_title','0',1,now())";
                 mysqli_query($gconnet, $sql) or error('error:' . $sql);
             }
         }
@@ -155,7 +158,7 @@ if(in_array($mode, array("report_insert", "report_temporary", "report_analyzing"
                     foreach ($satis_model_quizno as $model_type => $element_model_box) {
                         $sql = "UPDATE MM_analysis_report_model
                                 SET model_variable_element = 2
-                                WHERE mm_report_model_idx = '$idx' and model_type = '$element_model_type' and model_variable_element = 0";
+                                WHERE mm_report_model_idx = '$idx' and model_type = '$element_model_type'+1 and model_variable_element = 0";
                         mysqli_query($gconnet, $sql) or error('error:' . $sql);
                     }
                 }

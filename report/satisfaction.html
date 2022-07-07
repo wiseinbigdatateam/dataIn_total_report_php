@@ -107,8 +107,9 @@ $opt_info = mysqli_fetch_array($result);
 
         }
 
+        function setOptionQuizCase(optId) {
 
-        function setOptionQuiz(optId) {
+            // alert(optId);
 
             if ($('input:checkbox[name="quiz_list"]:checked').length <= 0) {
                 alert("문항을 선택해주세요.");
@@ -121,6 +122,52 @@ $opt_info = mysqli_fetch_array($result);
                 var quiz_txt = $("label[for='" + $("input[name='quiz_list']:checked").attr("id") + "']").text();
 
                 $("input[name='" + optId + "']").val(quiz_no);
+                // $("#" + optId).val(quiz_no);
+                $("#txt_" + optId).val(quiz_txt);
+
+                if (optId.includes('[')) {
+                    var txtId = optId.replace("[", "_").replace("]", "");
+                    $("#txt_" + txtId).val(quiz_txt);
+                }
+
+                if (optId.includes('case_quiz_no')) { // case example
+                    if ($("input[name='quiz_list']:checked").attr("exlist") == "") {
+                        alert("보기형 문항만 선택할 수 있습니다.");
+                        return false;
+                    } else {
+                        var optIdList = txtId.split("_");
+                        var optIdNo = optIdList[optIdList.length - 1];
+                        var exlist = $("input[name='quiz_list']:checked").attr("exlist").split("^");
+                        var caseExList = $("#case_ex_list_" + optIdNo);
+                        caseExList.find("li").remove();
+                        for (ii = 0; ii < exlist.length; ii++) {
+                            var detailList = exlist[ii].split("|");
+                            caseExList.append("<li><input type='checkbox' name='case_item_details[" + optIdNo + "][]' value='" + detailList[0] + "'> " + detailList[1] + "</li>");
+                        }
+                    }
+                }
+
+                $("input[name='quiz_list']").prop("checked", false);
+            }
+        }
+
+
+        function setOptionQuiz(optId) {
+
+            // alert(optId);
+
+            if ($('input:checkbox[name="quiz_list"]:checked').length <= 0) {
+                alert("문항을 선택해주세요.");
+            } else if ($('input:checkbox[name="quiz_list"]:checked').length > 1) {
+                alert("문항을 하나만 선택해주세요.");
+                $("input[name='quiz_list']").prop("checked", false);
+            } else {
+
+                var quiz_no = $("input[name='quiz_list']:checked").val();
+                var quiz_txt = $("label[for='" + $("input[name='quiz_list']:checked").attr("id") + "']").text();
+
+                // $("input[id='" + optId + "']").val(quiz_no);
+                $("#" + optId).val(quiz_no);
                 $("#txt_" + optId).val(quiz_txt);
 
                 if (optId.includes('[')) {
@@ -283,7 +330,8 @@ $opt_info = mysqli_fetch_array($result);
             if(boxId == "model_box_left") {
                 $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<label>요소만족도</label>');
                 $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<button class="btn-outline-secondary btn-plus-small" onclick="setOptionQuiz(\'element_'+sub_id+'\')">+</button>');
-                $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<input type="hidden" name="variable_element" value="element_'+sub_id+'">');
+                $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz(\'element_'+sub_id+'\')">-</button>');
+                $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<input type="hidden" id="element_'+sub_id+'" name="element_model_box[]" value="">');
                 $("#"+boxId).find(".card:last").find(".card-body").find(".card-action-wrap").find(".card-action-satismodel").append('<input type="text" id="txt_element_'+sub_id+'" readonly>');
 
             }
@@ -448,16 +496,18 @@ $opt_info = mysqli_fetch_array($result);
 
                                     $tmp_grp_idx = $row['quiz_no'];
                                 }
+
                                 if(is_array($case_list)) {
                                     foreach($case_list as $case_no => $case_row) {
                                 ?>
                                 <tr id="groupClassification">
                                     <td>
                                         <div class="input-group">
+
                                             <span class="input-group-text w130 m10 border-right"> 케이스 <?=$case_no?></span>
                                             <input type="hidden" name="case_quiz_no[<?=$case_no?>]" value="<?=$case_row['grp']?>">
                                             <input type="text" class="text-disabled input-border w300" id="txt_case_quiz_no_<?=$case_no?>" value="<?=$quiz_list[$case_row['grp']]?>" placeholder="문항리스트에서 추가하세요" disabled/>
-                                            <button class="btn-secondary btn-plus" id="btn_case_quiz_no_<?=$case_no?>" onclick="setOptionQuiz('case_quiz_no[<?=$case_no?>]')">+</button>
+                                            <button class="btn-secondary btn-plus" id="btn_case_quiz_no_<?=$case_no?>" onclick="setOptionQuizCase('case_quiz_no[<?=$case_no?>]')">+</button>
                                             <button class="btn-outline-secondary btn-minus" onclick="resetOptionQuiz('case_quiz_no[<?=$case_no?>]')">-</button>
 
                                             <ul id="case_ex_list_<?=$case_no?>" class="case-style">
@@ -528,7 +578,7 @@ $opt_info = mysqli_fetch_array($result);
                             </div>
                             <div class="mf_wrap satismodel">
                                 <?php
-                                $sql = "SELECT * FROM MM_analysis_report_model where mm_report_model_idx = '$select_idx' ORDER BY quiz_no ASC";
+                                $sql = "SELECT * FROM MM_analysis_report_model where mm_report_model_idx = '$select_idx' and model_variable_element != 1 ORDER BY quiz_no ASC";
                                 $result = mysqli_query($gconnet, $sql);
                                 while($row = mysqli_fetch_array($result)) {
                                     $model_list[$row['model_type']][$row['quiz_no']] = $row['quiz_no'];
@@ -578,14 +628,14 @@ $opt_info = mysqli_fetch_array($result);
                                             while($row = mysqli_fetch_array($result)) {
                                                 $element_model_list[$row['model_type']][$row['quiz_no']] = $row['quiz_no'];
                                             }
-                                            //print_r($element_model_list);
+
                                             ?>
                                             <div class="card-action-wrap">
                                                 <div class="card-action-satismodel">
                                                     <label>요소만족도</label>
                                                     <button class="btn-outline-secondary btn-plus-small" onclick="setOptionQuiz('element_<?=$boxId?>')">+</button>
-                                                    <button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz('<?=$element_id?>')">-</button>
-                                                    <input type="hidden" name="element_model_box[<?=$model_type?>]" value="<?=$element_quiz_no?>">
+                                                    <button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz('element_<?=$boxId?>')">-</button>
+                                                    <input type="hidden" id="element_<?=$boxId?>" name="element_model_box[<?=$element_quiz_no?>]" value="<?=$element_quiz_no?>">
                                                     <input type="text" id="txt_element_<?=$boxId?>" value="<?=$quiz_list[$element_quiz_no]?>" readonly>
                                                     <input type="number" class="input-weight" placeholder="가중치%" name="model_weight[<?=$model_type?>]" value="<?=$model_info['model_weight']?>">
                                                 </div>
@@ -644,9 +694,9 @@ $opt_info = mysqli_fetch_array($result);
                                                 ?>
                                                 <div class="card-action-satismodel">
                                                     <label>요소만족도</label>
-                                                    <button class="btn-outline-secondary btn-plus-small" onclick="setOptionQuiz('<?=$element_id?>')">+</button>
-                                                    <button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz('<?=$element_id?>')">-</button>
-                                                    <input type="hidden" name="element_model_box[<?=$model_type?>]" value="<?=$element_quiz_no?>">
+                                                    <button class="btn-outline-secondary btn-plus-small" onclick="setOptionQuiz('element_<?=$boxId?>')">+</button>
+                                                    <button class="btn-outline-secondary btn-minus-small" onclick="resetOptionQuiz('element_<?=$boxId?>')">-</button>
+                                                    <input type="hidden" id="element_<?=$boxId?>" name="element_model_box[<?=$element_quiz_no?>]" value="<?=$element_quiz_no?>">
                                                     <input type="text" id="txt_element_<?=$boxId?>" value="<?=$quiz_list[$element_quiz_no]?>" readonly>
                                                     <input type="number" class="input-weight" placeholder="가중치%" name="model_weight[<?=$model_type?>]" value="<?=$model_info['model_weight']?>">
                                                 </div>
