@@ -64,7 +64,8 @@ if(in_array($mode, array("report_insert", "report_temporary", "report_analyzing"
                 mm_report_scorepoint = '$mm_report_scorepoint',
                 mm_report_scorepoint2 = '$mm_report_scorepoint2',
                 mm_report_case = 'Y',
-                mm_report_case_idx = '$idx'
+                mm_report_case_idx = '$idx',
+                reg_status = 0
 
             WHERE report_idx = '$idx'";
     mysqli_query($gconnet, $sql) or error('error:'.$sql);
